@@ -1,5 +1,6 @@
 apply plugin: "java"
 apply plugin: "maven-publish"
+apply plugin: "jacoco"
 apply plugin: "org.junit.platform.gradle.plugin"
 apply plugin: "com.jfrog.artifactory"
 apply plugin: "com.jfrog.bintray"
@@ -54,13 +55,22 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-test {
-    testLogging {
-        events "passed", "skipped", "failed"
-        showStandardStreams = true
-        exceptionFormat = "full"
+jacoco {
+    applyTo junitPlatformTest
+}
+
+task junit5CodeCoverageReport(type:JacocoReport){
+    executionData junitPlatformTest
+    sourceSets sourceSets.main
+    sourceDirectories = files(project.sourceSets.main.allSource.srcDirs)
+    classDirectories = files(project.sourceSets.main.output)
+    reports {
+        xml.enabled = true
+        html.enabled = true
     }
 }
+
+check.dependsOn junit5CodeCoverageReport
 
 artifacts {
     archives sourcesJar
@@ -146,7 +156,6 @@ bintray {
         repo = "releases"
         name = "betterconfig-client"
         desc = "BetterConfig Java client library."
-        userOrg = "better-config"
         licenses = ["MIT"]
         websiteUrl = "https://betterconfig.com"
         vcsUrl = "https://github.com/betterconfig/betterconfigclient-java"
