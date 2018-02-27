@@ -5,9 +5,6 @@ apply plugin: "org.junit.platform.gradle.plugin"
 apply plugin: "com.jfrog.artifactory"
 apply plugin: "com.jfrog.bintray"
 
-group = "com.betterconfig"
-version = "${version}" + (Boolean.valueOf(System.getProperty("snapshot")) ? "-SNAPSHOT" : "")
-
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -15,7 +12,11 @@ ext{
     bintrayUser = System.getProperty("bintray.user")
     bintrayKey = System.getProperty("bintray.key")
     buildNumber = System.getProperty("build.number")
+    isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
 }
+
+group = "com.betterconfig"
+version = "${version}" + (isSnapshot ? "-SNAPSHOT" : "." + buildNumber)
 
 buildscript {
     repositories {
@@ -153,7 +154,6 @@ bintray {
     user = bintrayUser
     key = bintrayKey
     publications = ["mavenPublication"]
-    override = true
 
     pkg {
         repo = "releases"
