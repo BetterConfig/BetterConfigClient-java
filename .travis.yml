@@ -17,8 +17,9 @@ stages:
 jobs:
   include:
   - stage: coverage
-    script: "./gradlew check"
-  - script: bash <(curl -s https://codecov.io/bash)
+    script:
+    - "./gradlew check"
+    - "bash <(curl -s https://codecov.io/bash)"
     jdk: oraclejdk8
   - stage: snapshot
     script: "./gradlew artifactoryPublish -Dsnapshot=true -Dbintray.user=$BINTRAY_USER
