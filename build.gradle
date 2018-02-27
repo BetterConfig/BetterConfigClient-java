@@ -158,8 +158,9 @@ bintray {
         desc = "BetterConfig Java client library."
         licenses = ["MIT"]
         websiteUrl = "https://betterconfig.com"
-        vcsUrl = "https://github.com/betterconfig/betterconfigclient-java"
-        githubRepo = "https://github.com/betterconfig/betterconfigclient-java"
+        issueTrackerUrl = 'https://github.com/betterconfig/betterconfigclient-java/issues'
+        vcsUrl = "https://github.com/betterconfig/betterconfigclient-java.git"
+        githubRepo = "betterconfig/betterconfigclient-java"
         labels = ["betterconfig", "featureflag"]
         publicDownloadNumbers = true
         version {
