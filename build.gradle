@@ -66,7 +66,9 @@ task junit5CodeCoverageReport(type:JacocoReport){
     classDirectories = files(project.sourceSets.main.output)
     reports {
         xml.enabled = true
-        html.enabled = true
+        xml.destination "${buildDir}/reports/jacoco/report.xml"
+        html.enabled = false
+        csv.enabled = false
     }
 }
 
@@ -151,6 +153,7 @@ bintray {
     user = bintrayUser
     key = bintrayKey
     publications = ["mavenPublication"]
+    override = true
 
     pkg {
         repo = "releases"
