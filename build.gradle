@@ -16,7 +16,7 @@ ext{
 }
 
 group = "com.betterconfig"
-version = "${version}" + (isSnapshot ? "-SNAPSHOT" : "." + buildNumber)
+version = "${version}" + (isSnapshot ? "-SNAPSHOT-" + buildNumber : "")
 
 buildscript {
     repositories {
