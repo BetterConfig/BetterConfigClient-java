@@ -146,7 +146,7 @@ bintray {
         repo = "releases"
         name = "betterconfig-client"
         desc = "BetterConfig Java client library."
-        userOrg = "BetterConfig"
+        userOrg = "better-config"
         licenses = ["MIT"]
         websiteUrl = "https://betterconfig.com"
         vcsUrl = "https://github.com/betterconfig/betterconfigclient-java"
