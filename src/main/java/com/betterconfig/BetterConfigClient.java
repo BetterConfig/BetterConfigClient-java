@@ -17,8 +17,8 @@ public class BetterConfigClient implements ConfigurationProvider {
     private static final Logger logger = LoggerFactory.getLogger(BetterConfigClient.class);
     private ConfigCache cache;
 
-    private BetterConfigClient(Builder builder) throws IllegalArgumentException {
-        if(builder.projectToken == null)
+    private BetterConfigClient(String projectToken, Builder builder) throws IllegalArgumentException {
+        if(projectToken == null)
             throw new IllegalArgumentException("projectToken");
 
         ConfigFetcher fetcher = new ConfigFetcher(builder.httpClient == null
@@ -26,7 +26,7 @@ public class BetterConfigClient implements ConfigurationProvider {
                     .Builder()
                     .retryOnConnectionFailure(true)
                     .build()
-                : builder.httpClient, builder.projectToken);
+                : builder.httpClient, projectToken);
 
         this.cache = builder.cache == null
                 ? InMemoryConfigCache
@@ -43,7 +43,7 @@ public class BetterConfigClient implements ConfigurationProvider {
      * @param projectToken the token which identifies your project configuration.
      */
     public BetterConfigClient(String projectToken) {
-        this(Builder().projectToken(projectToken));
+        this(projectToken, newBuilder());
     }
 
     @Override
@@ -140,7 +140,7 @@ public class BetterConfigClient implements ConfigurationProvider {
      *
      * @return the new builder.
      */
-    public static Builder Builder() {
+    public static Builder newBuilder() {
         return new Builder();
     }
 
@@ -150,7 +150,6 @@ public class BetterConfigClient implements ConfigurationProvider {
     public static class Builder {
         private OkHttpClient httpClient;
         private Function<ConfigFetcher, ConfigCache> cache;
-        private String projectToken;
 
         /**
          * Sets the underlying http client which will be used to fetch the latest configuration.
@@ -175,23 +174,13 @@ public class BetterConfigClient implements ConfigurationProvider {
         }
 
         /**
-         * Sets the project token used to identify the current BetterConfig project.
-         *
-         * @param projectToken the project token.
-         * @return the builder.
-         */
-        public Builder projectToken(String projectToken) {
-            this.projectToken = projectToken;
-            return this;
-        }
-
-        /**
          * Builds the configured {@link BetterConfigClient} instance.
          *
+         * @param projectToken the project token.
          * @return the configured {@link BetterConfigClient} instance.
          */
-        public BetterConfigClient build() {
-            return new BetterConfigClient(this);
+        public BetterConfigClient build(String projectToken) {
+            return new BetterConfigClient(projectToken, this);
         }
     }
 }

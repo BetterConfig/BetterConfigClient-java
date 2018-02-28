@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,13 +35,36 @@ public class ConfigFetcherTest {
     @Test
     public void getConfigurationJsonStringETag() throws InterruptedException {
         String result = "{ \"fakeKey\":\"fakeValue\" }";
-        server.enqueue(new MockResponse().setResponseCode(200).setBody(result).setHeader("ETag", "fakeETag"));
-        server.enqueue(new MockResponse().setResponseCode(304));
+        this.server.enqueue(new MockResponse().setResponseCode(200).setBody(result).setHeader("ETag", "fakeETag"));
+        this.server.enqueue(new MockResponse().setResponseCode(304));
 
-        assertEquals(result, this.fetcher.getConfigurationJsonString().config());
-        assertTrue(this.fetcher.getConfigurationJsonString().isNotModified());
+        FetchResponse fResult = this.fetcher.getConfigurationJsonString();
+
+        assertEquals(result, fResult.config());
+        assertTrue(fResult.isFetched());
+        assertFalse(fResult.isNotModified());
+        assertFalse(fResult.isFailed());
+
+        FetchResponse notModifiedResponse = this.fetcher.getConfigurationJsonString();
+        assertTrue(notModifiedResponse.isNotModified());
+        assertFalse(notModifiedResponse.isFailed());
+        assertFalse(notModifiedResponse.isFetched());
 
         assertNull(this.server.takeRequest().getHeader("If-None-Match"));
         assertEquals("fakeETag", this.server.takeRequest().getHeader("If-None-Match"));
+    }
+
+    @Test
+    public void getConfigurationException() throws IOException {
+
+        ConfigFetcher fetch = new ConfigFetcher(new OkHttpClient.Builder().readTimeout(1, TimeUnit.SECONDS).build(), "");
+        fetch.setUrl(this.server.url("/").toString());
+
+        this.server.enqueue(new MockResponse().setBody("test").setBodyDelay(5, TimeUnit.SECONDS));
+
+        assertTrue(fetch.getConfigurationJsonString().isFailed());
+        assertEquals(null, fetch.getConfigurationJsonString().config());
+
+        fetch.close();
     }
 }

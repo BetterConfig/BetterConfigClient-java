@@ -1,6 +1,8 @@
 package com.betterconfig;
 
 import com.google.gson.Gson;
+import jdk.nashorn.internal.parser.Token;
+import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -22,19 +24,28 @@ public class BetterConfigClientTest {
         this.server = new MockWebServer();
         this.server.start();
 
-        this.client = BetterConfigClient.Builder()
-                .projectToken(TOKEN)
+        this.client = BetterConfigClient.newBuilder()
+                .httpClient(new OkHttpClient.Builder().build())
                 .cache(configFetcher -> {
                     configFetcher.setUrl(this.server.url("/").toString());
                     return InMemoryConfigCache.Builder().cacheTimeoutInSeconds(2).asyncRefresh(true).build(configFetcher);
                 })
-                .build();
+                .build(TOKEN);
     }
 
     @AfterEach
     public void tearDown() throws IOException {
         this.client.close();
         this.server.shutdown();
+    }
+
+    @Test
+    public void getConfigurationJsonStringWithDefaultConfig() {
+        BetterConfigClient cl = new BetterConfigClient(TOKEN);
+
+        // makes a call to a real url which would fail, null expected
+        String config = cl.getConfigurationJsonString();
+        assertEquals(null, config);
     }
 
     @Test
@@ -78,6 +89,16 @@ public class BetterConfigClientTest {
     }
 
     @Test
+    public void getConfigurationReturnsDefaultOnException() {
+        String badJson = "{ test: test] }";
+        Sample def = new Sample();
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(badJson));
+
+        Sample result = this.client.getConfiguration(Sample.class,def);
+        assertSame(def, result);
+    }
+
+    @Test
     public void getStringValue() {
         String sValue = "ááúúóüüőőööúúűű";
         String result = "{ \"fakeKey\":\""+sValue+"\" }";
@@ -90,6 +111,15 @@ public class BetterConfigClientTest {
     public void getStringValueReturnsDefaultOnFail() {
         String def = "def";
         server.enqueue(new MockResponse().setResponseCode(500));
+        String config = this.client.getStringValue("fakeKey", def);
+        assertEquals(def, config);
+    }
+
+    @Test
+    public void getStringValueReturnsDefaultOnException() {
+        String result = "{ test: test] }";
+        String def = "def";
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
         String config = this.client.getStringValue("fakeKey", def);
         assertEquals(def, config);
     }
@@ -110,6 +140,15 @@ public class BetterConfigClientTest {
     }
 
     @Test
+    public void getBooleanValueReturnsDefaultOnException() {
+        String result = "{ test: test] }";
+        boolean def = true;
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
+        boolean config = this.client.getBooleanValue("fakeKey", def);
+        assertEquals(def, config);
+    }
+
+    @Test
     public void getIntegerValue() {
         int iValue = 342423;
         String result = "{ \"fakeKey\":"+iValue+" }";
@@ -127,6 +166,15 @@ public class BetterConfigClientTest {
     }
 
     @Test
+    public void getIntegerValueReturnsDefaultOnException() {
+        String result = "{ test: test] }";
+        int def = 14;
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
+        int config = this.client.getIntegerValue("fakeKey", def);
+        assertEquals(def, config);
+    }
+
+    @Test
     public void getDoubleValue() {
         double iValue = 432.234;
         String result = "{ \"fakeKey\":"+iValue+" }";
@@ -139,6 +187,15 @@ public class BetterConfigClientTest {
     public void getDoubleValueReturnsDefaultOnFail() {
         double def = 432.234;
         server.enqueue(new MockResponse().setResponseCode(500));
+        double config = this.client.getDoubleValue("fakeKey", def);
+        assertEquals(def, config);
+    }
+
+    @Test
+    public void getDoubleValueReturnsDefaultOnException() {
+        String result = "{ test: test] }";
+        double def = 14.5;
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
         double config = this.client.getDoubleValue("fakeKey", def);
         assertEquals(def, config);
     }
