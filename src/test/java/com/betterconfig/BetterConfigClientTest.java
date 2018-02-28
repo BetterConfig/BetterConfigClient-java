@@ -40,6 +40,32 @@ public class BetterConfigClientTest {
     }
 
     @Test
+    public void ensuresProjectTokenIsNotNull() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, () -> new BetterConfigClient(null));
+
+        assertEquals("projectToken", exception.getMessage());
+
+        IllegalArgumentException builderException = assertThrows(
+                IllegalArgumentException.class, () -> BetterConfigClient.newBuilder().build(null));
+
+        assertEquals("projectToken", builderException.getMessage());
+    }
+
+    @Test
+    public void ensuresProjectTokenIsNotEmpty() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, () -> new BetterConfigClient(""));
+
+        assertEquals("projectToken", exception.getMessage());
+
+        IllegalArgumentException builderException = assertThrows(
+                IllegalArgumentException.class, () -> BetterConfigClient.newBuilder().build(""));
+
+        assertEquals("projectToken", builderException.getMessage());
+    }
+
+    @Test
     public void getConfigurationJsonStringWithDefaultConfig() {
         BetterConfigClient cl = new BetterConfigClient(TOKEN);
 

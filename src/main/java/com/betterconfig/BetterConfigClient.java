@@ -18,7 +18,7 @@ public class BetterConfigClient implements ConfigurationProvider {
     private ConfigCache cache;
 
     private BetterConfigClient(String projectToken, Builder builder) throws IllegalArgumentException {
-        if(projectToken == null)
+        if(projectToken == null || projectToken.isEmpty())
             throw new IllegalArgumentException("projectToken");
 
         ConfigFetcher fetcher = new ConfigFetcher(builder.httpClient == null
