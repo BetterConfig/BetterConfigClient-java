@@ -29,12 +29,10 @@ import com.betterconfig.*;
 
 **4. Create a BetterConfigClient instance**
 ```java
-ConfigurationProvider config = BetterConfigClient
-                .newBuilder()
-                .build("<PLACE-YOUR-PROJECT-TOKEN-HERE>");
+ConfigurationProvider configProvider = new BetterConfigClient("<PLACE-YOUR-PROJECT-TOKEN-HERE>");
 ```
 **5. Get your config value**
 ```java
-String myStringValue = config.getStringValue("keySampleText", "");
+String myStringValue = configProvider.getStringValue("keySampleText", "");
 System.out.format("My String value from BetterConfig: %s", myStringValue);
 ```
