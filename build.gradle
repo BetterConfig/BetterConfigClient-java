@@ -13,6 +13,7 @@ ext{
     bintrayKey = System.getProperty("bintray.key")
     buildNumber = System.getProperty("build.number")
     isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
+    signPass = System.getProperty("signing.pass")
 }
 
 group = "com.betterconfig"
@@ -154,6 +155,7 @@ bintray {
     user = bintrayUser
     key = bintrayKey
     publications = ["mavenPublication"]
+    publish = true
 
     pkg {
         repo = "releases"
@@ -170,6 +172,10 @@ bintray {
             name = project.version
             desc = "build ${buildNumber}"
             released  = new Date()
+            gpg {
+                sign = true
+                passphrase = signPass
+            }
         }
     }
 }
