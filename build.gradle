@@ -13,7 +13,6 @@ ext{
     bintrayKey = System.getProperty("bintray.key")
     buildNumber = System.getProperty("build.number")
     isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
-    signPass = System.getProperty("signing.pass")
 }
 
 group = "com.betterconfig"
@@ -82,10 +81,6 @@ artifacts {
 }
 
 def pomConfig = {
-    description "BetterConfig Java client library."
-    name "BetterConfig Java Client"
-    url "https://github.com/betterconfig/betterconfigclient-java"
-
     scm {
         url "https://github.com/betterconfig/betterconfigclient-java"
         developerConnection "scm:git:ssh:git@github.com:betterconfig/betterconfigclient-java.git"
@@ -124,7 +119,11 @@ publishing {
                 classifier "javadoc"
             }
             pom.withXml {
-                asNode().children().last() + pomConfig
+                def root = asNode()
+                root.appendNode("description", "BetterConfig Java client library.")
+                root.appendNode("name", "BetterConfig Java Client")
+                root.appendNode("url", "https://github.com/betterconfig/betterconfigclient-java")
+                root.children().last() + pomConfig
             }
         }
     }
@@ -172,10 +171,6 @@ bintray {
             name = project.version
             desc = "build ${buildNumber}"
             released  = new Date()
-            gpg {
-                sign = true
-                passphrase = signPass
-            }
         }
     }
 }
