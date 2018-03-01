@@ -33,6 +33,8 @@ ConfigurationProvider configProvider = new BetterConfigClient("<PLACE-YOUR-PROJE
 ```
 **5. Get your config value**
 ```java
-String myStringValue = configProvider.getStringValue("keySampleText", "");
-System.out.format("My String value from BetterConfig: %s", myStringValue);
+boolean isMyAwesomeFeatureEnabled = configProvider.getBooleanValue("key-of-my-awesome-feature", false);
+if(isMyAwesomeFeatureEnabled) {
+    //show your awesome feature to the world!
+}
 ```
