@@ -82,7 +82,7 @@ public class MyCustomCache extends ConfigCache {
     }
 }
 ```
-> If you decide to override the `close()` method, you should also call the `super.close()` method as well to tear the cache appropriately down.
+> If you decide to override the `close()` method, you should also call the `super.close()` to tear the cache appropriately down.
 
 Then you can just simply inject your custom cache implementation into the BetterConfig client:
 ```java
@@ -102,7 +102,7 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
 #### Async / Sync refresh
-You can define how'd you want to handle when the cached configuration is being expired. The asynchronous refresh means that when the cached value is requested while it's expired the previous value will be returned until the new configuration is fetched from the network without blocking the caller.
+You can define how do you want to handle when the cached configuration is being expired. The asynchronous refresh means that when a request has been made on the cache while it's expired, the previous value will be returned without blocking the caller, until the new configuration is fetched from the network.
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
                 .cache(configFetcher -> InMemoryConfigCache.newBuilder()
@@ -110,7 +110,7 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                                             .build(configFetcher))
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
-If you use the `.asyncRefresh()` with `false` the refresh operation will be executed synchronously which means it'll block the caller thread until the new configuration is fetched.
+If you use the `.asyncRefresh()` with `false` parameter, the refresh operation will be executed synchronously, so the caller thread  will be blocked until the new configuration is fetched.
 
 ## Logging
 The BetterConfig client uses the [slf4j](https://www.slf4j.org)'s facade for logging.
