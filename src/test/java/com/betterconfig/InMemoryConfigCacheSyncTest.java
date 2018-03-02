@@ -23,8 +23,8 @@ public class InMemoryConfigCacheSyncTest {
 
         ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
         fetcher.setUrl(this.server.url("/").toString());
-        this.cache = InMemoryConfigCache.Builder()
-                .cacheTimeoutInSeconds(5)
+        this.cache = InMemoryConfigCache.newBuilder()
+                .cacheRefreshRateInSeconds(5)
                 .asyncRefresh(false)
                 .build(fetcher);
     }

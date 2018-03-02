@@ -26,7 +26,7 @@ public class InMemoryConfigCache extends ConfigCache {
                 ? this.createAsyncLoader()
                 : this.createSyncLoader();
 
-        this.cache = CacheBuilder.newBuilder().refreshAfterWrite(builder.cacheTimeoutInSeconds, TimeUnit.SECONDS).build(loader);
+        this.cache = CacheBuilder.newBuilder().refreshAfterWrite(builder.cacheRefreshRateInSeconds, TimeUnit.SECONDS).build(loader);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class InMemoryConfigCache extends ConfigCache {
      *
      * @return the new builder.
      */
-    public static Builder Builder() {
+    public static Builder newBuilder() {
         return new Builder();
     }
 
@@ -97,18 +97,18 @@ public class InMemoryConfigCache extends ConfigCache {
      * A builder that helps construct an {@link InMemoryConfigCache} instance.
      */
     public static class Builder {
-        private int cacheTimeoutInSeconds;
+        private int cacheRefreshRateInSeconds;
         private boolean asyncRefresh;
 
         /**
          * Sets how long the cache will store its value before fetching the
          * latest from the network again.
          *
-         * @param cacheTimeoutInSeconds the timeout value in seconds.
+         * @param cacheRefreshRateInSeconds the refresh rate value in seconds.
          * @return the builder.
          */
-        public Builder cacheTimeoutInSeconds(int cacheTimeoutInSeconds) {
-            this.cacheTimeoutInSeconds = cacheTimeoutInSeconds;
+        public Builder cacheRefreshRateInSeconds(int cacheRefreshRateInSeconds) {
+            this.cacheRefreshRateInSeconds = cacheRefreshRateInSeconds;
             return this;
         }
 

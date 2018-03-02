@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class BetterConfigClientTest {
 
-    private static final String TOKEN = "TEST_TOKEN";
+    private static final String SECRET = "TEST_SECRET";
     private BetterConfigClient client;
     private MockWebServer server;
 
@@ -28,9 +28,9 @@ public class BetterConfigClientTest {
                 .httpClient(new OkHttpClient.Builder().build())
                 .cache(configFetcher -> {
                     configFetcher.setUrl(this.server.url("/").toString());
-                    return InMemoryConfigCache.Builder().cacheTimeoutInSeconds(2).asyncRefresh(true).build(configFetcher);
+                    return InMemoryConfigCache.newBuilder().cacheRefreshRateInSeconds(2).asyncRefresh(true).build(configFetcher);
                 })
-                .build(TOKEN);
+                .build(SECRET);
     }
 
     @AfterEach
@@ -40,34 +40,34 @@ public class BetterConfigClientTest {
     }
 
     @Test
-    public void ensuresProjectTokenIsNotNull() {
+    public void ensuresProjectSecretIsNotNull() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> new BetterConfigClient(null));
 
-        assertEquals("projectToken", exception.getMessage());
+        assertEquals("projectSecret", exception.getMessage());
 
         IllegalArgumentException builderException = assertThrows(
                 IllegalArgumentException.class, () -> BetterConfigClient.newBuilder().build(null));
 
-        assertEquals("projectToken", builderException.getMessage());
+        assertEquals("projectSecret", builderException.getMessage());
     }
 
     @Test
-    public void ensuresProjectTokenIsNotEmpty() {
+    public void ensuresProjectSecretIsNotEmpty() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> new BetterConfigClient(""));
 
-        assertEquals("projectToken", exception.getMessage());
+        assertEquals("projectSecret", exception.getMessage());
 
         IllegalArgumentException builderException = assertThrows(
                 IllegalArgumentException.class, () -> BetterConfigClient.newBuilder().build(""));
 
-        assertEquals("projectToken", builderException.getMessage());
+        assertEquals("projectSecret", builderException.getMessage());
     }
 
     @Test
     public void getConfigurationJsonStringWithDefaultConfig() {
-        BetterConfigClient cl = new BetterConfigClient(TOKEN);
+        BetterConfigClient cl = new BetterConfigClient(SECRET);
 
         // makes a call to a real url which would fail, null expected
         String config = cl.getConfigurationJsonString();

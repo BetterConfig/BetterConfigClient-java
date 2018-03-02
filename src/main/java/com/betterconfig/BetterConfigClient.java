@@ -17,21 +17,21 @@ public class BetterConfigClient implements ConfigurationProvider {
     private static final Logger logger = LoggerFactory.getLogger(BetterConfigClient.class);
     private ConfigCache cache;
 
-    private BetterConfigClient(String projectToken, Builder builder) throws IllegalArgumentException {
-        if(projectToken == null || projectToken.isEmpty())
-            throw new IllegalArgumentException("projectToken");
+    private BetterConfigClient(String projectSecret, Builder builder) throws IllegalArgumentException {
+        if(projectSecret == null || projectSecret.isEmpty())
+            throw new IllegalArgumentException("projectSecret");
 
         ConfigFetcher fetcher = new ConfigFetcher(builder.httpClient == null
                 ? new OkHttpClient
                     .Builder()
                     .retryOnConnectionFailure(true)
                     .build()
-                : builder.httpClient, projectToken);
+                : builder.httpClient, projectSecret);
 
         this.cache = builder.cache == null
                 ? InMemoryConfigCache
-                    .Builder()
-                    .cacheTimeoutInSeconds(2)
+                    .newBuilder()
+                    .cacheRefreshRateInSeconds(2)
                     .asyncRefresh(true)
                     .build(fetcher)
                 : builder.cache.apply(fetcher);
@@ -40,10 +40,10 @@ public class BetterConfigClient implements ConfigurationProvider {
     /**
      * Constructs a new client with the default configuration.
      *
-     * @param projectToken the token which identifies your project configuration.
+     * @param projectSecret the token which identifies your project configuration.
      */
-    public BetterConfigClient(String projectToken) {
-        this(projectToken, newBuilder());
+    public BetterConfigClient(String projectSecret) {
+        this(projectSecret, newBuilder());
     }
 
     @Override
@@ -176,11 +176,11 @@ public class BetterConfigClient implements ConfigurationProvider {
         /**
          * Builds the configured {@link BetterConfigClient} instance.
          *
-         * @param projectToken the project token.
+         * @param projectSecret the project token.
          * @return the configured {@link BetterConfigClient} instance.
          */
-        public BetterConfigClient build(String projectToken) {
-            return new BetterConfigClient(projectToken, this);
+        public BetterConfigClient build(String projectSecret) {
+            return new BetterConfigClient(projectSecret, this);
         }
     }
 }
