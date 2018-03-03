@@ -1,5 +1,6 @@
 # BetterConfig client for Java
-BetterConfig is a cloud based configuration as a service. It integrates with your apps, backends, websites, and other programs, so you can configure them using an easy to follow online User Interface (UI). [https://betterconfig.com](https://betterconfig.com)
+BetterConfig is a cloud based configuration as a service. It integrates with your apps, backends, websites, 
+and other programs, so you can configure them through [this](https://betterconfig.com) website even after they are deployed.
 
 [![Build Status](https://travis-ci.org/BetterConfig/BetterConfigClient-java.svg?branch=master)](https://travis-ci.org/BetterConfig/BetterConfigClient-java) [![Coverage Status](https://img.shields.io/codecov/c/github/BetterConfig/BetterConfigClient-java.svg)](https://codecov.io/gh/BetterConfig/BetterConfigClient-java) [![Javadocs](http://javadoc.io/badge/com.betterconfig/betterconfig-client.svg)](http://javadoc.io/doc/com.betterconfig/betterconfig-client)
 
