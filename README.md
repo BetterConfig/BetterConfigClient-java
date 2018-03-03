@@ -40,7 +40,7 @@ if(isMyAwesomeFeatureEnabled) {
 ```
 ## Configuration
 ### HttpClient
-The BetterConfig client internally uses an [OkHttpClient](https://github.com/square/okhttp) instance to fetch the latest configuration over http. You have the option to override the internal http client with your customized one. For example if your application runs behind a proxy you can do the following:
+The BetterConfig client internally uses an [OkHttpClient](https://github.com/square/okhttp) instance to fetch the latest configuration over HTTP. You have the option to override the internal HttpClient with your customized one. For example if your application runs behind a proxy you can do the following:
 ```java
 Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("proxyHost", proxyPort));
 
@@ -50,46 +50,8 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                             .build())
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
-> As the BetterConfig client maintains the whole lifetime of the internal http client, it's being closed simultaneously with the BetterConfig client, refrain from closing the http client manually.
+> As the BetterConfig client maintains the whole lifetime of the internal HttpClient, it's being closed simultaneously with the BetterConfig client, refrain from closing the HttpClient manually.
 
-### Cache
-You also have the option to inject your custom cache implementation into the client. To do this you have to inherit from the `ConfigCache` abstract class:
-```java
-public class MyCustomCache extends ConfigCache {
-
-    // the cache gets a ConfigFetcher argument used to fetch
-    // the latest configuration over http
-    public MyCustomCache(ConfigFetcher configFetcher) {
-        super(configFetcher);
-    }
-
-    @Override
-    public String get() {
-        // you should return here with the cached value,
-        // or initiate the fetching of the latest config
-    }
-
-    @Override
-    public void invalidateCache() {
-        // you should invalidate the cached value here
-    }
-
-    // optional, in case if you have any resources that should be closed
-    @Override
-    public void close() throws IOException {
-        super.close();
-        // here you can close your resources
-    }
-}
-```
-> If you decide to override the `close()` method, you should also call the `super.close()` to tear the cache appropriately down.
-
-Then you can just simply inject your custom cache implementation into the BetterConfig client:
-```java
-BetterConfigClient client = BetterConfigClient.newBuilder()
-                .cache(configFetcher -> new MyCustomCache(configFetcher))
-                .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
-```
 ### Default cache
 By default the BetterConfig client uses a built in in-memory cache implementation, which can be customized with the following configurations:
 #### Cache refresh interval
@@ -102,7 +64,9 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
 #### Async / Sync refresh
-You can define how do you want to handle when the cached configuration is being expired. The asynchronous refresh means that when a request has been made on the cache while it's expired, the previous value will be returned without blocking the caller, until the new configuration is fetched from the network.
+You can define how do you want to handle the expiration of the cached configuration. If you choose asynchronous refresh then 
+when a request is being made on the cache while it's expired, the previous value will be returned without blocking the caller, 
+until the fetching of the new configuration is completed.
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
                 .cache(configFetcher -> InMemoryConfigCache.newBuilder()
@@ -110,7 +74,48 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                                             .build(configFetcher))
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
-If you use the `.asyncRefresh()` with `false` parameter, the refresh operation will be executed synchronously, so the caller thread  will be blocked until the new configuration is fetched.
+If you set the `.asyncRefresh()` to be `false`, the refresh operation will be executed synchronously, 
+so the caller thread will be blocked until the fetching of the new configuration is completed.
+
+### Custom Cache
+You also have the option to inject your custom cache implementation into the client. All you have to do is to inherit from the `ConfigCache` abstract class:
+```java
+public class MyCustomCache extends ConfigCache {
+
+    // the cache gets a ConfigFetcher argument used to fetch
+    // the latest configuration over HTTP
+    public MyCustomCache(ConfigFetcher configFetcher) {
+        super(configFetcher);
+    }
+
+    @Override
+    public String get() {
+        // here you have to return with the cached value,
+        // or you can initiate the fetching of the latest config
+        // with the given ConfigFetcher: String config = super.fetcher().getConfigurationJsonString();
+    }
+
+    @Override
+    public void invalidateCache() {
+        // here you can invalidate the cached value
+    }
+
+    // optional, in case if you have any resources that should be closed
+    @Override
+    public void close() throws IOException {
+        super.close();
+        // here you can close your resources
+    }
+}
+```
+> If you decide to override the `close()` method, you also have to call the `super.close()` to tear down the cache appropriately.
+
+Then you can simply inject your custom cache implementation into the BetterConfig client:
+```java
+BetterConfigClient client = BetterConfigClient.newBuilder()
+                .cache(configFetcher -> new MyCustomCache(configFetcher)) // inject your custom cache
+                .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
+```
 
 ## Logging
 The BetterConfig client uses the [slf4j](https://www.slf4j.org)'s facade for logging.
