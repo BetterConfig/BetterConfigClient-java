@@ -4,6 +4,9 @@ package com.betterconfig;
  * This class represents a fetch response object.
  */
 public class FetchResponse {
+    /**
+     * The response status, can be {@code Fetched}, {@code NotModified} or {@code Failed}.
+     */
     public enum Status {
         Fetched,
         NotModified,

@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.concurrent.*;
 
 /**
- * An in-memory cache implementation used to store the fetched configurations.
+ * A thread safe in-memory cache implementation used to store the fetched configurations.
  */
 public class InMemoryConfigCache extends ConfigCache {
     private static final Logger logger = LoggerFactory.getLogger(InMemoryConfigCache.class);

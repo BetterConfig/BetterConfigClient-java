@@ -3,7 +3,7 @@ package com.betterconfig;
 import java.io.Closeable;
 
 /**
- * Defines the public interface of a configuration provider component.
+ * Defines the public interface of the {@link BetterConfigClient}.
  */
 public interface ConfigurationProvider extends Closeable {
     /**
@@ -25,7 +25,7 @@ public interface ConfigurationProvider extends Closeable {
     <T> T getConfiguration(Class<T> classOfT, T defaultValue);
 
     /**
-     * Gets a string value from the configuration identified by a given {@code key}.
+     * Gets a string value from the configuration identified by the given {@code key}.
      *
      * @param key the identifier of the configuration value.
      * @param defaultValue in case of any failure, this value will be returned.
@@ -34,7 +34,7 @@ public interface ConfigurationProvider extends Closeable {
     String getStringValue(String key, String defaultValue);
 
     /**
-     * Gets a boolean value from the configuration identified by a given {@code key}.
+     * Gets a boolean value from the configuration identified by the given {@code key}.
      *
      * @param key the identifier of the configuration value.
      * @param defaultValue in case of any failure, this value will be returned.
@@ -43,7 +43,7 @@ public interface ConfigurationProvider extends Closeable {
     boolean getBooleanValue(String key, boolean defaultValue);
 
     /**
-     * Gets an int value from the configuration identified by a given {@code key}.
+     * Gets an int value from the configuration identified by the given {@code key}.
      *
      * @param key the identifier of the configuration value.
      * @param defaultValue in case of any failure, this value will be returned.
@@ -52,7 +52,7 @@ public interface ConfigurationProvider extends Closeable {
     int getIntegerValue(String key, int defaultValue);
 
     /**
-     * Gets a double value from the configuration identified by a given {@code key}.
+     * Gets a double value from the configuration identified by the given {@code key}.
      *
      * @param key the identifier of the configuration value.
      * @param defaultValue in case of any failure, this value will be returned.
@@ -61,7 +61,7 @@ public interface ConfigurationProvider extends Closeable {
     double getDoubleValue(String key, double defaultValue);
 
     /**
-     * Invalidates the internal cache, the next read will fetch the configuration from the network.
+     * Invalidates the internal cache.
      */
     void invalidateCache();
 }

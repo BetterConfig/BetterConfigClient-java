@@ -10,7 +10,7 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * This class is used by the inner {@link ConfigCache} implementation to fetch the latest configuration.
+ * This class is used by the internal {@link ConfigCache} implementation to fetch the latest configuration.
  */
 public class ConfigFetcher implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(ConfigFetcher.class);

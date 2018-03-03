@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.function.Function;
 
 /**
- * A client for using configurations provided by BetterConfig.
+ * A client for handling configurations provided by BetterConfig.
  */
 public class BetterConfigClient implements ConfigurationProvider {
     private static final Logger logger = LoggerFactory.getLogger(BetterConfigClient.class);
@@ -38,7 +38,7 @@ public class BetterConfigClient implements ConfigurationProvider {
     }
 
     /**
-     * Constructs a new client with the default configuration.
+     * Constructs a new client instance with the default configuration.
      *
      * @param projectSecret the token which identifies your project configuration.
      */
