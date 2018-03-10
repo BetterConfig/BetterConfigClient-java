@@ -1,22 +1,22 @@
 package com.betterconfig;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * This class is used by the internal {@link ConfigCache} implementation to fetch the latest configuration.
  */
 public class ConfigFetcher implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(ConfigFetcher.class);
-    private OkHttpClient httpClient;
+    private final OkHttpClient httpClient;
     private String url;
     private String eTag;
+    private final String version;
 
     void setUrl(String url) {
         this.url = url;
@@ -31,37 +31,47 @@ public class ConfigFetcher implements Closeable {
     public ConfigFetcher(OkHttpClient httpClient, String projectToken) {
         this.httpClient = httpClient;
         this.url = "https://cdn.betterconfig.com/configuration-files/" + projectToken + "/config.json";
+        this.version = this.getClass().getPackage().getImplementationVersion();
     }
 
     /**
-     * Gets the latest configuration from the network.
+     * Gets the latest configuration from the network asynchronously.
      *
      * @return a {@link FetchResponse} instance which holds the result of the fetch.
      */
-    public FetchResponse getConfigurationJsonString() {
+    public CompletableFuture<FetchResponse> getConfigurationJsonStringAsync() {
         Request request = this.getRequest();
 
-        Response response = null;
-        try {
-            response = this.httpClient.newCall(request).execute();
-            if(response.isSuccessful())
-            {
-                this.eTag = response.header("ETag");
-                return new FetchResponse(FetchResponse.Status.Fetched, response.body().string());
+        CompletableFuture<FetchResponse> future = new CompletableFuture<>();
+        this.httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                logger.error("An error occurred during fetching the latest configuration.", e);
+                future.complete(new FetchResponse(FetchResponse.Status.Failed, null));
             }
 
-            if(response.code() == 304)
-                return new FetchResponse(FetchResponse.Status.NotModified, null);
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                try {
+                    if (response.isSuccessful()) {
+                        logger.debug("Fetch was successful: new config fetched");
+                        eTag = response.header("ETag");
+                        future.complete(new FetchResponse(FetchResponse.Status.Fetched, response.body().string()));
+                    } else if (response.code() == 304) {
+                        logger.debug("Fetch was successful: config not modified");
+                        future.complete(new FetchResponse(FetchResponse.Status.NotModified, null));
+                    } else {
+                        logger.debug("Non success status code:" + response.code());
+                        future.complete(new FetchResponse(FetchResponse.Status.Failed, null));
+                    }
+                } catch (Exception e) {
+                    logger.error("An error occurred during fetching the latest configuration.", e);
+                    future.complete(new FetchResponse(FetchResponse.Status.Failed, null));
+                }
+            }
+        });
 
-            logger.debug("Non success status code:" + response.code());
-        } catch (IOException e) {
-            logger.error("An error occurred during fetching the latest configuration.", e);
-        } finally {
-            if(response != null)
-                response.close();
-        }
-
-        return new FetchResponse(FetchResponse.Status.Failed, null);
+        return future;
     }
 
     @Override
@@ -81,7 +91,7 @@ public class ConfigFetcher implements Closeable {
 
     Request getRequest() {
         Request.Builder builder =  new Request.Builder()
-                .addHeader("User-Agent", "BetterConfigClient-Java/" + "1.0");
+                .addHeader("User-Agent", "BetterConfigClient-Java/" + this.version);
 
         if(this.eTag != null)
             builder.addHeader("If-None-Match", this.eTag);

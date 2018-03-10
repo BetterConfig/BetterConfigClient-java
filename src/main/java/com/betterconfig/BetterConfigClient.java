@@ -1,25 +1,32 @@
 package com.betterconfig;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import okhttp3.*;
+import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.function.Function;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 /**
  * A client for handling configurations provided by BetterConfig.
  */
 public class BetterConfigClient implements ConfigurationProvider {
     private static final Logger logger = LoggerFactory.getLogger(BetterConfigClient.class);
-    private ConfigCache cache;
+    private final RefreshPolicy refreshPolicy;
+    private final Gson gson = new Gson();
+    private final JsonParser parser = new JsonParser();
+    private final int maxWaitTimeToSyncCallsInSeconds;
 
     private BetterConfigClient(String projectSecret, Builder builder) throws IllegalArgumentException {
         if(projectSecret == null || projectSecret.isEmpty())
-            throw new IllegalArgumentException("projectSecret");
+            throw new IllegalArgumentException("projectSecret is null or empty");
+
+        this.maxWaitTimeToSyncCallsInSeconds = builder.maxWaitTimeToSyncCallsInSeconds;
 
         ConfigFetcher fetcher = new ConfigFetcher(builder.httpClient == null
                 ? new OkHttpClient
@@ -28,13 +35,14 @@ public class BetterConfigClient implements ConfigurationProvider {
                     .build()
                 : builder.httpClient, projectSecret);
 
-        this.cache = builder.cache == null
-                ? InMemoryConfigCache
-                    .newBuilder()
-                    .cacheRefreshRateInSeconds(2)
-                    .asyncRefresh(true)
-                    .build(fetcher)
-                : builder.cache.apply(fetcher);
+        ConfigCache cache = builder.cache == null
+                ? new InMemoryConfigCache()
+                : builder.cache;
+
+        this.refreshPolicy = builder.refreshPolicy == null
+                ? AutoPollingPolicy.newBuilder()
+                    .build(fetcher, cache)
+                : builder.refreshPolicy.apply(fetcher, cache);
     }
 
     /**
@@ -48,91 +56,101 @@ public class BetterConfigClient implements ConfigurationProvider {
 
     @Override
     public String getConfigurationJsonString() {
-        return this.cache.get();
+        try {
+            return this.maxWaitTimeToSyncCallsInSeconds > 0
+                    ? this.getConfigurationJsonStringAsync().get(this.maxWaitTimeToSyncCallsInSeconds, TimeUnit.SECONDS)
+                    : this.getConfigurationJsonStringAsync().get();
+        } catch (Exception e) {
+            logger.error("An error occurred during reading the configuration.", e);
+            return null;
+        }
+    }
+
+    @Override
+    public CompletableFuture<String> getConfigurationJsonStringAsync() {
+        return this.refreshPolicy.getConfigurationJsonAsync();
     }
 
     @Override
     public <T> T getConfiguration(Class<T> classOfT, T defaultValue) {
-        String config = this.cache.get();
-        if(config == null) return defaultValue;
-
         try {
-            return new Gson().fromJson(config, classOfT);
+            return this.maxWaitTimeToSyncCallsInSeconds > 0
+                    ? this.getConfigurationAsync(classOfT, defaultValue).get(this.maxWaitTimeToSyncCallsInSeconds, TimeUnit.SECONDS)
+                    : this.getConfigurationAsync(classOfT, defaultValue).get();
         } catch (Exception e) {
             logger.error("An error occurred during deserialization.", e);
+            return defaultValue;
         }
-
-        return defaultValue;
     }
 
     @Override
-    public String getStringValue(String key, String defaultValue) {
-        try {
-            JsonObject obj = this.getJsonObject();
-            if(obj == null) return defaultValue;
-            return obj.get(key).getAsString();
-        } catch (Exception e) {
-            logger.error("An error occurred during deserialization.", e);
-        }
-
-        return defaultValue;
+    public <T> CompletableFuture<T> getConfigurationAsync(Class<T> classOfT, T defaultValue) {
+        return this.refreshPolicy.getConfigurationJsonAsync()
+                .thenApply(config -> config == null
+                        ? defaultValue
+                        : gson.fromJson(config, classOfT));
     }
 
     @Override
-    public boolean getBooleanValue(String key, boolean defaultValue) {
-        try {
-            JsonObject obj = this.getJsonObject();
-            if(obj == null) return defaultValue;
-            return obj.get(key).getAsBoolean();
-        } catch (Exception e) {
-            logger.error("An error occurred during deserialization.", e);
-        }
+    public  <T> T getValue(Class<T> classOfT, String key, T defaultValue) {
+        if(key == null || key.isEmpty())
+            throw new IllegalArgumentException("key is null or empty");
 
-        return defaultValue;
+        try {
+            return this.maxWaitTimeToSyncCallsInSeconds > 0
+                    ? this.getValueAsync(classOfT, key, defaultValue).get(this.maxWaitTimeToSyncCallsInSeconds, TimeUnit.SECONDS)
+                    : this.getValueAsync(classOfT, key, defaultValue).get();
+        } catch (Exception e) {
+            logger.error("An error occurred during the reading of the value for key '"+key+"'.", e);
+            return defaultValue;
+        }
     }
 
     @Override
-    public int getIntegerValue(String key, int defaultValue) {
-        try {
-            JsonObject obj = this.getJsonObject();
-            if(obj == null) return defaultValue;
-            return obj.get(key).getAsInt();
-        } catch (Exception e) {
-            logger.error("An error occurred during deserialization.", e);
-        }
+    public <T> CompletableFuture<T> getValueAsync(Class<T> classOfT, String key, T defaultValue) {
+        if(key == null || key.isEmpty())
+            throw new IllegalArgumentException("key is null or empty");
 
-        return defaultValue;
+        return this.getJsonElementAsync(key)
+                .thenApply(element -> {
+                    if(element == null) return defaultValue;
+
+                    if(classOfT == String.class)
+                        return classOfT.cast(element.getAsString());
+                    else if(classOfT == Integer.class)
+                        return classOfT.cast(element.getAsInt());
+                    else if(classOfT == Double.class)
+                        return classOfT.cast(element.getAsDouble());
+                    else if (classOfT == Boolean.class)
+                        return classOfT.cast(element.getAsBoolean());
+                    else throw new IllegalArgumentException("Only String, Integer, Double or Boolean types are supported");
+                });
     }
 
     @Override
-    public double getDoubleValue(String key, double defaultValue) {
+    public void forceRefresh() {
         try {
-            JsonObject obj = this.getJsonObject();
-            if(obj == null) return defaultValue;
-            return obj.get(key).getAsDouble();
+            this.forceRefreshAsync().get();
         } catch (Exception e) {
-            logger.error("An error occurred during deserialization.", e);
+            logger.error("An error occurred during the refresh.", e);
         }
-
-        return defaultValue;
     }
 
     @Override
-    public void invalidateCache() {
-        this.cache.invalidateCache();
-    }
-
-    private JsonObject getJsonObject() {
-        String config = this.cache.get();
-        if(config == null) return null;
-
-        JsonParser parser = new JsonParser();
-        return parser.parse(config).getAsJsonObject();
+    public CompletableFuture<Void> forceRefreshAsync() {
+        return this.refreshPolicy.refreshAsync();
     }
 
     @Override
     public void close() throws IOException {
-        this.cache.close();
+        this.refreshPolicy.close();
+    }
+
+    private CompletableFuture<JsonElement> getJsonElementAsync(String key) {
+        return this.refreshPolicy.getConfigurationJsonAsync()
+                .thenApply(config -> config == null
+                        ? null
+                        : this.parser.parse(config).getAsJsonObject().get(key));
     }
 
     /**
@@ -149,7 +167,9 @@ public class BetterConfigClient implements ConfigurationProvider {
      */
     public static class Builder {
         private OkHttpClient httpClient;
-        private Function<ConfigFetcher, ConfigCache> cache;
+        private ConfigCache cache;
+        private int maxWaitTimeToSyncCallsInSeconds;
+        private BiFunction<ConfigFetcher, ConfigCache, RefreshPolicy> refreshPolicy;
 
         /**
          * Sets the underlying http client which will be used to fetch the latest configuration.
@@ -163,13 +183,41 @@ public class BetterConfigClient implements ConfigurationProvider {
         }
 
         /**
-         * Sets the underlying cache implementation.
+         * Sets the internal cache implementation.
          *
-         * @param cache a function used to create the cache with the given {@link ConfigFetcher}.
+         * @param cache a {@link ConfigFetcher} implementation used to cache the configuration.
          * @return the builder.
          */
-        public Builder cache(Function<ConfigFetcher, ConfigCache> cache) {
+        public Builder cache(ConfigCache cache) {
             this.cache = cache;
+            return this;
+        }
+
+        /**
+         * Sets the internal refresh policy implementation.
+         *
+         * @param refreshPolicy a function used to create the a {@link RefreshPolicy} implementation with the given {@link ConfigFetcher} and {@link ConfigCache}.
+         * @return the builder.
+         */
+        public Builder refreshPolicy(BiFunction<ConfigFetcher, ConfigCache, RefreshPolicy> refreshPolicy) {
+            this.refreshPolicy = refreshPolicy;
+            return this;
+        }
+
+        /**
+         * Sets the maximum time in seconds at most how long the synchronous calls
+         * e.g. {@code client.getConfiguration(...)} have to be blocked.
+         *
+         * @param maxWaitTimeToSyncCallsInSeconds the maximum time in seconds at most how long the synchronous calls
+         *                                        e.g. {@code client.getConfiguration(...)} have to be blocked.
+         * @return the builder.
+         * @throws IllegalArgumentException when the given value is lesser than 2.
+         */
+        public Builder maxWaitTimeToSyncCallsInSeconds(int maxWaitTimeToSyncCallsInSeconds) {
+            if(maxWaitTimeToSyncCallsInSeconds < 2)
+                throw new IllegalArgumentException("maxWaitTimeToSyncCallsInSeconds cannot be less than 2 seconds");
+
+            this.maxWaitTimeToSyncCallsInSeconds = maxWaitTimeToSyncCallsInSeconds;
             return this;
         }
 

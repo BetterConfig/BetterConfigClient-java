@@ -1,50 +1,61 @@
 package com.betterconfig;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * An abstract cache API used to make custom cache implementations for {@link BetterConfigClient}.
+ * A cache API used to make custom cache implementations for {@link BetterConfigClient}.
  */
-public abstract class ConfigCache implements Closeable {
+public abstract class ConfigCache {
+    private static final Logger logger = LoggerFactory.getLogger(ConfigFetcher.class);
+    private String inMemoryValue;
 
-    private ConfigFetcher configFetcher;
+    public String get() {
+        try {
+            return this.getInternal();
+        } catch (Exception e) {
+            logger.error("An error occurred during the cache read", e);
+            return this.inMemoryValue;
+        }
+    }
 
-    /**
-     * Through this getter, child classes can use the fetcher to
-     * get the latest configuration over HTTP.
-     *
-     * @return the config fetcher.
-     */
-    protected ConfigFetcher fetcher() {
-        return configFetcher;
+    public void set(String value) {
+        try {
+            this.inMemoryValue = value;
+            this.setInternal(value);
+        } catch (Exception e) {
+            logger.error("An error occurred during the cache write", e);
+        }
     }
 
     /**
-     * Constructor used by the child classes.
+     * Through this getter, the in-memory representation of the cached value can be accessed.
+     * When the underlying cache implementations is not able to load or store its value,
+     * this will represent the latest cached configuration.
      *
-     * @param configFetcher the internal config fetcher instance.
+     * @return the cached value in memory.
      */
-    public ConfigCache(ConfigFetcher configFetcher) {
-        this.configFetcher = configFetcher;
-    }
+    protected String inMemoryValue() { return this.inMemoryValue; }
 
     /**
      * Child classes has to implement this method, the {@link BetterConfigClient}
      * uses it to get the actual value from the cache.
      *
      * @return the cached configuration.
+     * @throws Exception if unable to read the cache.
      */
-    public abstract String get();
+    protected abstract String getInternal() throws Exception;
 
     /**
-     * Invalidates the underlying cache.
+     * * Child classes has to implement this method, the {@link BetterConfigClient}
+     * uses it to set the actual cached value.
+     *
+     * @param value the new value to cache.
+     * @throws Exception if unable to save the value.
      */
-    public abstract void invalidateCache();
-
-    @Override
-    public void close() throws IOException {
-        this.configFetcher.close();
-    }
+    protected abstract void setInternal(String value) throws Exception;
 }
 

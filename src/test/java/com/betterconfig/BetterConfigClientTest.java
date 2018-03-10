@@ -8,8 +8,12 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import sun.java2d.pipe.SpanShapeRenderer;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,9 +30,9 @@ public class BetterConfigClientTest {
 
         this.client = BetterConfigClient.newBuilder()
                 .httpClient(new OkHttpClient.Builder().build())
-                .cache(configFetcher -> {
+                .refreshPolicy((configFetcher, cache) -> {
                     configFetcher.setUrl(this.server.url("/").toString());
-                    return InMemoryConfigCache.newBuilder().cacheRefreshRateInSeconds(2).asyncRefresh(true).build(configFetcher);
+                    return ExpiringCachePolicy.newBuilder().cacheRefreshRateInSeconds(2).asyncRefresh(true).build(configFetcher, cache);
                 })
                 .build(SECRET);
     }
@@ -44,12 +48,12 @@ public class BetterConfigClientTest {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> new BetterConfigClient(null));
 
-        assertEquals("projectSecret", exception.getMessage());
+        assertEquals("projectSecret is null or empty", exception.getMessage());
 
         IllegalArgumentException builderException = assertThrows(
                 IllegalArgumentException.class, () -> BetterConfigClient.newBuilder().build(null));
 
-        assertEquals("projectSecret", builderException.getMessage());
+        assertEquals("projectSecret is null or empty", builderException.getMessage());
     }
 
     @Test
@@ -57,21 +61,45 @@ public class BetterConfigClientTest {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> new BetterConfigClient(""));
 
-        assertEquals("projectSecret", exception.getMessage());
+        assertEquals("projectSecret is null or empty", exception.getMessage());
 
         IllegalArgumentException builderException = assertThrows(
                 IllegalArgumentException.class, () -> BetterConfigClient.newBuilder().build(""));
 
-        assertEquals("projectSecret", builderException.getMessage());
+        assertEquals("projectSecret is null or empty", builderException.getMessage());
     }
 
     @Test
-    public void getConfigurationJsonStringWithDefaultConfig() {
-        BetterConfigClient cl = new BetterConfigClient(SECRET);
+    public void getConfigurationJsonStringWithDefaultConfigTimout() {
+        BetterConfigClient cl = BetterConfigClient.newBuilder()
+                .maxWaitTimeToSyncCallsInSeconds(2)
+                .build(SECRET);
 
         // makes a call to a real url which would fail, null expected
         String config = cl.getConfigurationJsonString();
         assertEquals(null, config);
+    }
+
+    @Test
+    public void getConfigurationJsonWithDefaultConfigTimout() {
+        BetterConfigClient cl = BetterConfigClient.newBuilder()
+                .maxWaitTimeToSyncCallsInSeconds(2)
+                .build(SECRET);
+
+        // makes a call to a real url which would fail, default expected
+        Sample config = cl.getConfiguration(Sample.class, Sample.Empty);
+        assertEquals(Sample.Empty, config);
+    }
+
+    @Test
+    public void getValueWithDefaultConfigTimout() {
+        BetterConfigClient cl = BetterConfigClient.newBuilder()
+                .maxWaitTimeToSyncCallsInSeconds(2)
+                .build(SECRET);
+
+        // makes a call to a real url which would fail, default expected
+        boolean config = cl.getValue(Boolean.class, "key", true);
+        assertTrue(config);
     }
 
     @Test
@@ -129,7 +157,7 @@ public class BetterConfigClientTest {
         String sValue = "ááúúóüüőőööúúűű";
         String result = "{ \"fakeKey\":\""+sValue+"\" }";
         server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
-        String config = this.client.getStringValue("fakeKey", null);
+        String config = this.client.getValue(String.class,"fakeKey", null);
         assertEquals(sValue, config);
     }
 
@@ -137,7 +165,7 @@ public class BetterConfigClientTest {
     public void getStringValueReturnsDefaultOnFail() {
         String def = "def";
         server.enqueue(new MockResponse().setResponseCode(500));
-        String config = this.client.getStringValue("fakeKey", def);
+        String config = this.client.getValue(String.class,"fakeKey", def);
         assertEquals(def, config);
     }
 
@@ -146,7 +174,7 @@ public class BetterConfigClientTest {
         String result = "{ test: test] }";
         String def = "def";
         server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
-        String config = this.client.getStringValue("fakeKey", def);
+        String config = this.client.getValue(String.class,"fakeKey", def);
         assertEquals(def, config);
     }
 
@@ -154,14 +182,14 @@ public class BetterConfigClientTest {
     public void getBooleanValue() {
         String result = "{ \"fakeKey\":\"true\" }";
         server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
-        boolean config = this.client.getBooleanValue("fakeKey", false);
+        boolean config = this.client.getValue(Boolean.class,"fakeKey", false);
         assertTrue(config);
     }
 
     @Test
     public void getBooleanValueReturnsDefaultOnFail() {
         server.enqueue(new MockResponse().setResponseCode(500));
-        boolean config = this.client.getBooleanValue("fakeKey", true);
+        boolean config = this.client.getValue(boolean.class,"fakeKey", true);
         assertTrue(config);
     }
 
@@ -170,7 +198,7 @@ public class BetterConfigClientTest {
         String result = "{ test: test] }";
         boolean def = true;
         server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
-        boolean config = this.client.getBooleanValue("fakeKey", def);
+        boolean config = this.client.getValue(boolean.class,"fakeKey", def);
         assertEquals(def, config);
     }
 
@@ -179,7 +207,7 @@ public class BetterConfigClientTest {
         int iValue = 342423;
         String result = "{ \"fakeKey\":"+iValue+" }";
         server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
-        int config = this.client.getIntegerValue("fakeKey", 0);
+        int config = this.client.getValue(Integer.class,"fakeKey", 0);
         assertEquals(iValue, config);
     }
 
@@ -187,7 +215,7 @@ public class BetterConfigClientTest {
     public void getIntegerValueReturnsDefaultOnFail() {
         int def = 342423;
         server.enqueue(new MockResponse().setResponseCode(500));
-        int config = this.client.getIntegerValue("fakeKey", def);
+        int config = this.client.getValue(int.class,"fakeKey", def);
         assertEquals(def, config);
     }
 
@@ -196,7 +224,7 @@ public class BetterConfigClientTest {
         String result = "{ test: test] }";
         int def = 14;
         server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
-        int config = this.client.getIntegerValue("fakeKey", def);
+        int config = this.client.getValue(int.class,"fakeKey", def);
         assertEquals(def, config);
     }
 
@@ -205,7 +233,7 @@ public class BetterConfigClientTest {
         double iValue = 432.234;
         String result = "{ \"fakeKey\":"+iValue+" }";
         server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
-        double config = this.client.getDoubleValue("fakeKey", 0.0);
+        double config = this.client.getValue(Double.class,"fakeKey", 0.0);
         assertEquals(iValue, config);
     }
 
@@ -213,7 +241,7 @@ public class BetterConfigClientTest {
     public void getDoubleValueReturnsDefaultOnFail() {
         double def = 432.234;
         server.enqueue(new MockResponse().setResponseCode(500));
-        double config = this.client.getDoubleValue("fakeKey", def);
+        double config = this.client.getValue(double.class,"fakeKey", def);
         assertEquals(def, config);
     }
 
@@ -222,7 +250,7 @@ public class BetterConfigClientTest {
         String result = "{ test: test] }";
         double def = 14.5;
         server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
-        double config = this.client.getDoubleValue("fakeKey", def);
+        double config = this.client.getValue(double.class,"fakeKey", def);
         assertEquals(def, config);
     }
 
@@ -232,7 +260,7 @@ public class BetterConfigClientTest {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("test2"));
 
         assertEquals("test", this.client.getConfigurationJsonString());
-        this.client.invalidateCache();
+        this.client.forceRefresh();
         assertEquals("test2", this.client.getConfigurationJsonString());
     }
 
@@ -242,11 +270,12 @@ public class BetterConfigClientTest {
         server.enqueue(new MockResponse().setResponseCode(500));
 
         assertEquals("test", this.client.getConfigurationJsonString());
-        this.client.invalidateCache();
-        assertEquals(null, this.client.getConfigurationJsonString());
+        this.client.forceRefresh();
+        assertEquals("test", this.client.getConfigurationJsonString());
     }
 
-    class Sample {
+    static class Sample {
+        static Sample Empty = new Sample();
         int value1 = 1;
         String value2 = "abc";
         double value3 = 2.4;
