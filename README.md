@@ -101,16 +101,18 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                 .refreshPolicy((configFetcher, cache) -> 
                     AutoPollingPolicy.newBuilder()
                         .configurationChangeListener((parser, newConfiguration) -> {
-                            // here you can parse the new configuration like: parser.parseValue(Boolean.class, "key-of-my-awesome-feature")                            
+                            // here you can parse the new configuration like this: 
+                            // parser.parseValue(Boolean.class, newConfiguration, "key-of-my-awesome-feature")                            
                         })
                         .build(configFetcher, cache)
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
-If you want to subscribe to the configuration changed event later in your applications lifetime, then you can do the following:
+If you want to subscribe to the configuration changed event later in your applications lifetime, then you can do the following (this will only work when you have an auto polling refresh policy configured in the BetterConfig client):
 ```java
 client.getRefreshPolicy(AutoPollingPolicy.class)
     .addConfigurationChangeListener((parser, newConfiguration) -> {
-        // here you can parse the new configuration like: parser.parseValue(Boolean.class, "key-of-my-awesome-feature")  
+        // here you can parse the new configuration like this: 
+        // parser.parseValue(Boolean.class, newConfiguration, "key-of-my-awesome-feature")  
     });
 ```
 
