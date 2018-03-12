@@ -42,7 +42,7 @@ if(isMyAwesomeFeatureEnabled) {
     //show your awesome feature to the world!
 }
 ```
-#### Requirements for Android
+### Android
 The minimum supported sdk version is 26 (oreo). Java 1.8 or later is required.
 ```groovy
 android {
@@ -79,11 +79,10 @@ This policy fetches the latest configuration and updates the cache repeatedly.
 You have the option to configure the polling interval through its builder (it has to be greater than 2 seconds, the default is 60):
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
-                .refreshPolicy((configFetcher, cache) -> {
+                .refreshPolicy((configFetcher, cache) -> 
                     AutoPollingPolicy.newBuilder()
                         .autoPollRateInSeconds(120) // set the polling interval
-                        .build(fetcher,cache)
-                }
+                        .build(configFetcher, cache)
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
 
@@ -94,11 +93,10 @@ You can define the refresh rate of the cache in seconds,
 after the initial cached value is set this value will be used to determine how much time must pass before initiating a new configuration fetch request through the `ConfigFetcher`.
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
-                .refreshPolicy((configFetcher, cache) -> {
+                .refreshPolicy((configFetcher, cache) -> 
                     ExpiringCachePolicy.newBuilder()
                         .cacheRefreshRateInSeconds(120) // the cache will expire in 120 seconds
-                        .build(fetcher,cache)
-                }
+                        .build(configFetcher, cache)
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
 ##### Async / Sync refresh
@@ -107,11 +105,11 @@ when a request is being made on the cache while it's expired, the previous value
 until the fetching of the new configuration is completed.
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
-                .refreshPolicy((configFetcher, cache) -> {
+                .refreshPolicy((configFetcher, cache) -> 
                     ExpiringCachePolicy.newBuilder()
                         .asyncRefresh(true) // the refresh will be executed asynchronously
-                        .build(fetcher,cache)
-                }
+                        .build(configFetcher, cache)
+                .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
 If you set the `.asyncRefresh()` to be `false`, the refresh operation will be awaited
 until the fetching of the new configuration is completed.
@@ -120,7 +118,7 @@ until the fetching of the new configuration is completed.
 With this policy every new configuration request on the BetterConfigClient will trigger a new fetch over HTTP.
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
-                .refreshPolicy((configFetcher, cache) -> new AlwaysFetchingPolicy(fetcher,cache));
+                .refreshPolicy((configFetcher, cache) -> new AlwaysFetchingPolicy(configFetcher,cache));
 ```
 
 #### Custom Policy
