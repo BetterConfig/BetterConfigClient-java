@@ -1,8 +1,5 @@
 package com.betterconfig;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +14,8 @@ import java.util.function.BiFunction;
  */
 public class BetterConfigClient implements ConfigurationProvider {
     private static final Logger logger = LoggerFactory.getLogger(BetterConfigClient.class);
+    private static final ConfigurationParser parser = new ConfigurationParser();
     private final RefreshPolicy refreshPolicy;
-    private final Gson gson = new Gson();
-    private final JsonParser parser = new JsonParser();
     private final int maxWaitTimeForSyncCallsInSeconds;
 
     private BetterConfigClient(String projectSecret, Builder builder) throws IllegalArgumentException {
@@ -52,6 +48,11 @@ public class BetterConfigClient implements ConfigurationProvider {
      */
     public BetterConfigClient(String projectSecret) {
         this(projectSecret, newBuilder());
+    }
+
+    @Override
+    public <T extends RefreshPolicy> T getRefreshPolicy(Class<T> classOfT) {
+        return classOfT.cast(this.refreshPolicy);
     }
 
     @Override
@@ -142,22 +143,11 @@ public class BetterConfigClient implements ConfigurationProvider {
 
     private <T> T getJsonValue(Class<T> classOfT, String config, String key, T defaultValue) {
         try {
-            JsonElement element = this.parser.parse(config).getAsJsonObject().get(key);
-            if (element == null) return defaultValue;
-
-            if (classOfT == String.class)
-                return classOfT.cast(element.getAsString());
-            else if (classOfT == Integer.class)
-                return classOfT.cast(element.getAsInt());
-            else if (classOfT == Double.class)
-                return classOfT.cast(element.getAsDouble());
-            else if (classOfT == Boolean.class)
-                return classOfT.cast(element.getAsBoolean());
+            return parser.parseValue(classOfT, config, key);
         } catch (Exception e) {
             logger.error("An error occurred during the deserialization of the value for key '"+key+"'.", e);
+            return defaultValue;
         }
-
-        return defaultValue;
     }
 
     private <T> T getDefaultValue(Class<T> classOfT, T defaultValue) {
@@ -180,7 +170,7 @@ public class BetterConfigClient implements ConfigurationProvider {
 
     private <T> T deserializeJson(Class<T> classOfT, String config, T defaultValue) {
         try {
-            return gson.fromJson(config, classOfT);
+            return parser.parse(classOfT, config);
         } catch (Exception e) {
             return defaultValue;
         }

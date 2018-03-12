@@ -15,7 +15,7 @@ public class Main {
         System.out.println("keyString: " + config.keyString);
 
         // get individual config values identified by a key
-        System.out.println("keySampleText: " + client.getStringValue("keySampleText", ""));
+        System.out.println("keySampleText: " + client.getValue(String.class,"keySampleText", ""));
     }
 
     static class SampleConfig {

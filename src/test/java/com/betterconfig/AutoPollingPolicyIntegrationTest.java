@@ -10,11 +10,12 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AutoPollingPolicyIntegrationTest {
-    private RefreshPolicy policy;
+    private AutoPollingPolicy policy;
     private MockWebServer server;
 
     @BeforeEach
@@ -56,6 +57,23 @@ public class AutoPollingPolicyIntegrationTest {
 
         //next call will get the new value
         assertEquals("test2", this.policy.getConfigurationJsonAsync().get());
+    }
+
+    @Test
+    public void configChanged() throws InterruptedException {
+        AtomicReference<String> newConfig  = new AtomicReference<>();
+        this.policy.addConfigurationChangeListener((parser, newConfiguration) -> newConfig.set(newConfiguration));
+
+        this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test"));
+        this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test2"));
+
+        Thread.sleep(1000);
+
+        assertEquals("test", newConfig.get());
+
+        Thread.sleep(2000);
+
+        assertEquals("test2", newConfig.get());
     }
 
     @Test

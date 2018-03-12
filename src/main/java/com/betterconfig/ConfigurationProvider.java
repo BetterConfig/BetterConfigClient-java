@@ -8,6 +8,15 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ConfigurationProvider extends Closeable {
     /**
+     * Gets the internal refresh policy.
+     *
+     * @param classOfT the class of T.
+     * @param <T> the type of the desired policy.
+     * @return the internal policy.
+     */
+    <T extends RefreshPolicy> T getRefreshPolicy(Class<T> classOfT);
+
+    /**
      * Gets the configuration as a json string synchronously.
      *
      * @return the configuration as a json string. Returns {@code null} if the
@@ -24,7 +33,7 @@ public interface ConfigurationProvider extends Closeable {
     CompletableFuture<String> getConfigurationJsonStringAsync();
 
     /**
-     * Gets the configuration synchronously serialized to a {@code <T>} type.
+     * Gets the configuration synchronously parsed to a {@code <T>} type.
      *
      * @param classOfT the class of T.
      * @param defaultValue in case of any failure, this value will be returned.
@@ -34,7 +43,7 @@ public interface ConfigurationProvider extends Closeable {
     <T> T getConfiguration(Class<T> classOfT, T defaultValue);
 
     /**
-     * Gets the configuration asynchronously serialized to a {@code <T>} type.
+     * Gets the configuration asynchronously parsed to a {@code <T>} type.
      *
      * @param classOfT the class of T.
      * @param defaultValue in case of any failure, this value will be returned.

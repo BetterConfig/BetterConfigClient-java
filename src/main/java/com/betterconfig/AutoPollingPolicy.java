@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -12,9 +13,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AutoPollingPolicy extends RefreshPolicy {
     private static final Logger logger = LoggerFactory.getLogger(BetterConfigClient.class);
+    private static final ConfigurationParser parser = new ConfigurationParser();
     private final ScheduledExecutorService scheduler;
     private final CompletableFuture<Void> initFuture;
     private final AtomicBoolean initialized;
+    private final ArrayList<ConfigurationChangeListener> listeners;
 
     /**
      * Constructor used by the child classes.
@@ -25,6 +28,11 @@ public class AutoPollingPolicy extends RefreshPolicy {
     private AutoPollingPolicy(ConfigFetcher configFetcher, ConfigCache cache, Builder builder) {
         super(configFetcher, cache);
 
+        this.listeners = new ArrayList<>();
+
+        if(builder.listener != null)
+            this.listeners.add(builder.listener);
+
         this.initialized = new AtomicBoolean(false);
         this.initFuture = new CompletableFuture<>();
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -32,8 +40,11 @@ public class AutoPollingPolicy extends RefreshPolicy {
             try {
                 FetchResponse response = super.fetcher().getConfigurationJsonStringAsync().get();
                 String cached = super.cache().get();
-                if (response.isFetched() && !response.config().equals(cached))
-                    super.cache().set(response.config());
+                String config = response.config();
+                if (response.isFetched() && !config.equals(cached)) {
+                    super.cache().set(config);
+                    this.broadcastConfigurationChanged(config);
+                }
 
                 if(!response.isFailed() && !initialized.getAndSet(true))
                     initFuture.complete(null);
@@ -56,6 +67,30 @@ public class AutoPollingPolicy extends RefreshPolicy {
     public void close() throws IOException {
         super.close();
         this.scheduler.shutdown();
+        this.listeners.clear();
+    }
+
+    /**
+     * Subscribes a new listener to the configuration changed event.
+     *
+     * @param listener the listener.
+     */
+    public synchronized void addConfigurationChangeListener(ConfigurationChangeListener listener) {
+        listeners.add(listener);
+    }
+
+    /**
+     * Removes a given listener from the configuration changed event.
+     *
+     * @param listener the listener.
+     */
+    public synchronized void removeConfigurationChangeListener(ConfigurationChangeListener listener) {
+        listeners.remove(listener);
+    }
+
+    private synchronized void broadcastConfigurationChanged(String newConfiguration) {
+        for (ConfigurationChangeListener listener : this.listeners)
+            listener.onConfigurationChanged(parser, newConfiguration);
     }
 
     /**
@@ -72,6 +107,7 @@ public class AutoPollingPolicy extends RefreshPolicy {
      */
     public static class Builder {
         private int autoPollRateInSeconds = 60;
+        private ConfigurationChangeListener listener;
 
         /**
          * Sets at least how often this policy should fetch the latest configuration and refresh the cache.
@@ -85,6 +121,21 @@ public class AutoPollingPolicy extends RefreshPolicy {
                 throw new IllegalArgumentException("autoPollRateInSeconds cannot be less than 2 seconds");
 
             this.autoPollRateInSeconds = autoPollRateInSeconds;
+            return this;
+        }
+
+        /**
+         * Sets a configuration changed listener.
+         *
+         * @param listener the listener.
+         * @return the builder.
+         * @throws IllegalArgumentException when the given listener is null.
+         */
+        public Builder configurationChangeListener(ConfigurationChangeListener listener) {
+            if(listener == null)
+                throw new IllegalArgumentException("listener cannot be null");
+
+            this.listener = listener;
             return this;
         }
 

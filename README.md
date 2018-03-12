@@ -84,6 +84,7 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
 The internal caching control and the communication between the client and BetterConfig are managed through a refresh policy. There are 3 predefined implementations built in the library.
 #### 1. Auto polling policy (default)
 This policy fetches the latest configuration and updates the cache repeatedly. 
+##### Poll rate 
 You have the option to configure the polling interval through its builder (it has to be greater than 2 seconds, the default is 60):
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
@@ -92,6 +93,25 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                         .autoPollRateInSeconds(120) // set the polling interval
                         .build(configFetcher, cache)
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
+```
+##### Change listeners 
+You can set change listeners that will be notified when a new configuration is fetched. The policy calls the listeners only, when the new configuration is differs from the cached one.
+```java
+BetterConfigClient client = BetterConfigClient.newBuilder()
+                .refreshPolicy((configFetcher, cache) -> 
+                    AutoPollingPolicy.newBuilder()
+                        .configurationChangeListener((parser, newConfiguration) -> {
+                            // here you can parse the new configuration like: parser.parseValue(Boolean.class, "key-of-my-awesome-feature")                            
+                        })
+                        .build(configFetcher, cache)
+                .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
+```
+If you want to subscribe to the configuration changed event later in your applications lifetime, then you can do the following:
+```java
+client.getRefreshPolicy(AutoPollingPolicy.class)
+    .addConfigurationChangeListener((parser, newConfiguration) -> {
+        // here you can parse the new configuration like: parser.parseValue(Boolean.class, "key-of-my-awesome-feature")  
+    });
 ```
 
 #### 2. Expiring cache policy

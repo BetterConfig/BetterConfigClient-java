@@ -26,6 +26,6 @@ public class ConfigController {
     // with a configured webhook: https://betterconfig.com/Docs#integrations-webhooks
     @RequestMapping(value = "/configchanged", method = RequestMethod.POST)
     public void configchanged() {
-        this.client.invalidateCache();
+        this.client.forceRefresh();
     }
 }

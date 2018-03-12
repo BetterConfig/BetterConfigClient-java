@@ -1,8 +1,13 @@
 package com.betterconfig;
 
+import okhttp3.OkHttpClient;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -50,5 +55,36 @@ public class AutoPollingPolicyTest {
         assertEquals("test", policy.getConfigurationJsonAsync().get());
 
         verify(cache, never()).write(result);
+    }
+
+    @Test
+    public void configChanged() throws IOException, InterruptedException {
+        MockWebServer server = new MockWebServer();
+        server.start();
+
+        ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
+        ConfigCache cache = new InMemoryConfigCache();
+        fetcher.setUrl(server.url("/").toString());
+
+        AtomicReference<String> newConfig  = new AtomicReference<>();
+
+        AutoPollingPolicy policy = AutoPollingPolicy.newBuilder()
+                .autoPollRateInSeconds(2)
+                .configurationChangeListener((parser, newConfiguration) -> newConfig.set(newConfiguration))
+                .build(fetcher, cache);
+
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("test"));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("test2"));
+
+        Thread.sleep(1000);
+
+        assertEquals("test", newConfig.get());
+
+        Thread.sleep(2000);
+
+        assertEquals("test2", newConfig.get());
+
+        server.close();
+        policy.close();
     }
 }
