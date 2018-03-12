@@ -2,14 +2,14 @@ package com.betterconfig;
 
 import java.util.concurrent.CompletableFuture;
 
-public class FetchAlwaysPolicy extends RefreshPolicy {
+public class AlwaysFetchingPolicy extends RefreshPolicy {
        /**
      * Constructor used by the child classes.
      *
      * @param configFetcher the internal config fetcher instance.
      * @param cache         the internal cache instance.
      */
-    public FetchAlwaysPolicy(ConfigFetcher configFetcher, ConfigCache cache) {
+    public AlwaysFetchingPolicy(ConfigFetcher configFetcher, ConfigCache cache) {
         super(configFetcher, cache);
     }
 

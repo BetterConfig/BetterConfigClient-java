@@ -15,7 +15,7 @@ public abstract class ConfigCache {
 
     public String get() {
         try {
-            return this.getInternal();
+            return this.read();
         } catch (Exception e) {
             logger.error("An error occurred during the cache read", e);
             return this.inMemoryValue;
@@ -25,7 +25,7 @@ public abstract class ConfigCache {
     public void set(String value) {
         try {
             this.inMemoryValue = value;
-            this.setInternal(value);
+            this.write(value);
         } catch (Exception e) {
             logger.error("An error occurred during the cache write", e);
         }
@@ -47,7 +47,7 @@ public abstract class ConfigCache {
      * @return the cached configuration.
      * @throws Exception if unable to read the cache.
      */
-    protected abstract String getInternal() throws Exception;
+    protected abstract String read() throws Exception;
 
     /**
      * * Child classes has to implement this method, the {@link BetterConfigClient}
@@ -56,6 +56,6 @@ public abstract class ConfigCache {
      * @param value the new value to cache.
      * @throws Exception if unable to save the value.
      */
-    protected abstract void setInternal(String value) throws Exception;
+    protected abstract void write(String value) throws Exception;
 }
 

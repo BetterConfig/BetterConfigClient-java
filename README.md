@@ -2,7 +2,10 @@
 BetterConfig is a cloud based configuration as a service. It integrates with your apps, backends, websites, 
 and other programs, so you can configure them through [this](https://betterconfig.com) website even after they are deployed.
 
-[![Build Status](https://travis-ci.org/BetterConfig/BetterConfigClient-java.svg?branch=master)](https://travis-ci.org/BetterConfig/BetterConfigClient-java) [![Coverage Status](https://img.shields.io/codecov/c/github/BetterConfig/BetterConfigClient-java.svg)](https://codecov.io/gh/BetterConfig/BetterConfigClient-java) [![Javadocs](http://javadoc.io/badge/com.betterconfig/betterconfig-client.svg)](http://javadoc.io/doc/com.betterconfig/betterconfig-client)
+[![Build Status](https://travis-ci.org/BetterConfig/BetterConfigClient-java.svg?branch=master)](https://travis-ci.org/BetterConfig/BetterConfigClient-java)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.betterconfig/betterconfig-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.betterconfig/betterconfig-client)
+[![Coverage Status](https://img.shields.io/codecov/c/github/BetterConfig/BetterConfigClient-java.svg)](https://codecov.io/gh/BetterConfig/BetterConfigClient-java)
+[![Javadocs](http://javadoc.io/badge/com.betterconfig/betterconfig-client.svg)](http://javadoc.io/doc/com.betterconfig/betterconfig-client)
 
 ## Getting started
 
@@ -13,12 +16,12 @@ and other programs, so you can configure them through [this](https://betterconfi
 <dependency>
     <groupId>com.betterconfig</groupId>
     <artifactId>betterconfig-client</artifactId>
-    <version>1.0.5</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 *Gradle:*
 ```groovy
-compile 'com.betterconfig:betterconfig-client:1.0.5'
+compile 'com.betterconfig:betterconfig-client:1.1.0'
 ```
 **2. Get your Project Secret from [BetterConfig.com](https://betterconfig.com) portal**
 ![YourConnectionUrl](https://raw.githubusercontent.com/BetterConfig/BetterConfigClient-dotnet/master/media/readme01.png  "YourProjectToken")
@@ -34,11 +37,27 @@ BetterConfigClient client = new BetterConfigClient("<PLACE-YOUR-PROJECT-SECRET-H
 ```
 **5. Get your config value**
 ```java
-boolean isMyAwesomeFeatureEnabled = client.getBooleanValue("key-of-my-awesome-feature", false);
+boolean isMyAwesomeFeatureEnabled = client.getValue(Boolean.class, "key-of-my-awesome-feature", false);
 if(isMyAwesomeFeatureEnabled) {
     //show your awesome feature to the world!
 }
 ```
+#### Requirements for Android
+The minimum supported sdk version is 26 (oreo). Java 1.8 or later is required.
+```groovy
+android {
+    defaultConfig {
+        //...
+        minSdkVersion 26
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+```
+
 ## Configuration
 ### HttpClient
 The BetterConfig client internally uses an [OkHttpClient](https://github.com/square/okhttp) instance to fetch the latest configuration over HTTP. You have the option to override the internal HttpClient with your customized one. For example if your application runs behind a proxy you can do the following:
@@ -53,57 +72,75 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
 ```
 > As the BetterConfig client maintains the whole lifetime of the internal HttpClient, it's being closed simultaneously with the BetterConfig client, refrain from closing the HttpClient manually.
 
-### Default cache
-By default the BetterConfig client uses a built in in-memory cache implementation, which can be customized with the following configurations:
-#### Cache refresh interval
-You can define the refresh rate of the cache in seconds, after the initial cached value is set this value will be used to determine how much time must pass before initiating a new configuration fetch request through the `ConfigFetcher`.
+### Refresh policies
+The internal caching control and the communication between the client and BetterConfig are managed through a refresh policy. There are 3 predefined implementations built in the library.
+#### 1. Auto polling policy (default)
+This policy fetches the latest configuration and updates the cache repeatedly. 
+You have the option to configure the polling interval through its builder (it has to be greater than 2 seconds, the default is 60):
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
-                .cache(configFetcher -> InMemoryConfigCache.newBuilder()
-                                            .cacheRefreshRateInSeconds(2) // the cache will expire in 2 seconds
-                                            .build(configFetcher))
+                .refreshPolicy((configFetcher, cache) -> {
+                    AutoPollingPolicy.newBuilder()
+                        .autoPollRateInSeconds(120) // set the polling interval
+                        .build(fetcher,cache)
+                }
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
-#### Async / Sync refresh
+
+#### 2. Expiring cache policy
+This policy uses an expiring cache to maintain the internally stored configuration. 
+##### Cache refresh interval 
+You can define the refresh rate of the cache in seconds, 
+after the initial cached value is set this value will be used to determine how much time must pass before initiating a new configuration fetch request through the `ConfigFetcher`.
+```java
+BetterConfigClient client = BetterConfigClient.newBuilder()
+                .refreshPolicy((configFetcher, cache) -> {
+                    ExpiringCachePolicy.newBuilder()
+                        .cacheRefreshRateInSeconds(120) // the cache will expire in 120 seconds
+                        .build(fetcher,cache)
+                }
+                .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
+```
+##### Async / Sync refresh
 You can define how do you want to handle the expiration of the cached configuration. If you choose asynchronous refresh then 
-when a request is being made on the cache while it's expired, the previous value will be returned without blocking the caller, 
+when a request is being made on the cache while it's expired, the previous value will be returned immediately 
 until the fetching of the new configuration is completed.
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
-                .cache(configFetcher -> InMemoryConfigCache.newBuilder()
-                                            .asyncRefresh(true) // the refresh will be executed asynchronously
-                                            .build(configFetcher))
-                .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
+                .refreshPolicy((configFetcher, cache) -> {
+                    ExpiringCachePolicy.newBuilder()
+                        .asyncRefresh(true) // the refresh will be executed asynchronously
+                        .build(fetcher,cache)
+                }
 ```
-If you set the `.asyncRefresh()` to be `false`, the refresh operation will be executed synchronously, 
-so the caller thread will be blocked until the fetching of the new configuration is completed.
+If you set the `.asyncRefresh()` to be `false`, the refresh operation will be awaited
+until the fetching of the new configuration is completed.
 
-### Custom Cache
-You also have the option to inject your custom cache implementation into the client. All you have to do is to inherit from the `ConfigCache` abstract class:
+#### 3. Always fetching policy
+With this policy every new configuration request on the BetterConfigClient will trigger a new fetch over HTTP.
 ```java
-public class MyCustomCache extends ConfigCache {
+BetterConfigClient client = BetterConfigClient.newBuilder()
+                .refreshPolicy((configFetcher, cache) -> new AlwaysFetchingPolicy(fetcher,cache));
+```
 
-    // the cache gets a ConfigFetcher argument used to fetch
-    // the latest configuration over HTTP
-    public MyCustomCache(ConfigFetcher configFetcher) {
-        super(configFetcher);
+#### Custom Policy
+You can also implement your custom refresh policy by extending the `RefreshPolicy` abstract class.
+```java
+public class MyCustomPolicy extends RefreshPolicy {
+    
+    public MyCustomPolicy(ConfigFetcher configFetcher, ConfigCache cache) {
+        super(configFetcher, cache);
     }
 
     @Override
-    public String get() {
-        // here you have to return with the cached value,
-        // or you can initiate the fetching of the latest config
-        // with the given ConfigFetcher: String config = super.fetcher().getConfigurationJsonString();
+    public CompletableFuture<String> getConfigurationJsonAsync() {
+        // this method will be called when the configuration is requested from the BetterConfig client.
+        // you can access the config fetcher through the super.fetcher() and the internal cache via super.cache()
     }
-
-    @Override
-    public void invalidateCache() {
-        // here you can invalidate the cached value
-    }
-
+    
     // optional, in case if you have any resources that should be closed
     @Override
-    public void close() throws IOException {
+     public void close() throws IOException {
         super.close();
         // here you can close your resources
     }
@@ -111,10 +148,36 @@ public class MyCustomCache extends ConfigCache {
 ```
 > If you decide to override the `close()` method, you also have to call the `super.close()` to tear down the cache appropriately.
 
-Then you can simply inject your custom cache implementation into the BetterConfig client:
+Then you can simply inject your custom policy implementation into the BetterConfig client:
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
-                .cache(configFetcher -> new MyCustomCache(configFetcher)) // inject your custom cache
+                .refreshPolicy((configFetcher, cache) -> new MyCustomPolicy(configFetcher, cache)) // inject your custom policy
+                .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
+```
+
+### Custom Cache
+You have the option to inject your custom cache implementation into the client. All you have to do is to inherit from the `ConfigCache` abstract class:
+```java
+public class MyCustomCache extends ConfigCache {
+    
+    @Override
+    public String read() {
+        // here you have to return with the cached value
+        // you can access the latest cached value in case 
+        // of a failure like: super.inMemoryValue();
+    }
+
+    @Override
+    public void write(String value) {
+        // here you have to store the new value in the cache
+    }
+}
+```
+
+Using your custom cache implementation:
+```java
+BetterConfigClient client = BetterConfigClient.newBuilder()
+                .cache(new MyCustomCache()) // inject your custom cache
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
 

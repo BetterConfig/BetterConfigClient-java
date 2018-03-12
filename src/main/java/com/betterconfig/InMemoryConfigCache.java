@@ -6,10 +6,10 @@ package com.betterconfig;
 public class InMemoryConfigCache extends ConfigCache {
 
     @Override
-    protected String getInternal() {
+    protected String read() {
         return super.inMemoryValue();
     }
 
     @Override
-    protected void setInternal(String value) { }
+    protected void write(String value) { }
 }

@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class FetchAlwaysPolicyTest {
+public class AlwaysFetchingPolicyTest {
     private RefreshPolicy policy;
     private MockWebServer server;
 
@@ -25,7 +25,7 @@ public class FetchAlwaysPolicyTest {
         ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
         ConfigCache cache = new InMemoryConfigCache();
         fetcher.setUrl(this.server.url("/").toString());
-        this.policy = new FetchAlwaysPolicy(fetcher,cache);
+        this.policy = new AlwaysFetchingPolicy(fetcher,cache);
     }
 
     @AfterEach
@@ -50,7 +50,7 @@ public class FetchAlwaysPolicyTest {
     public void getCacheFails() throws InterruptedException, ExecutionException {
         ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
         fetcher.setUrl(this.server.url("/").toString());
-        FetchAlwaysPolicy lPolicy = new FetchAlwaysPolicy(fetcher, new FailingCache());
+        AlwaysFetchingPolicy lPolicy = new AlwaysFetchingPolicy(fetcher, new FailingCache());
 
         this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test"));
         this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test2").setBodyDelay(3, TimeUnit.SECONDS));

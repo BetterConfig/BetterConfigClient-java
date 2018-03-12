@@ -90,10 +90,9 @@ public class ExpiringCachePolicy extends RefreshPolicy {
 
         /**
          * Sets whether the cache should refresh itself asynchronously or synchronously.
-         * <p>If it's set to {@code true} the cache will not block the caller thread when the
-         * cache timeout is reached. Until the refresh is finished it returns with the previous
-         * stored value.</p>
-         * <p>If it's set to {@code false} the cache will block the caller thread until the expired
+         * <p>If it's set to {@code true} reading from the policy will not wait for the refresh to be finished,
+         * instead it returns immediately with the previous stored value.</p>
+         * <p>If it's set to {@code false} the policy will wait until the expired
          * value is being refreshed with the latest configuration.</p>
          *
          * @param asyncRefresh the refresh behavior.
