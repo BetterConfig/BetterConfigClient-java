@@ -174,7 +174,7 @@ public class MyCustomPolicy extends RefreshPolicy {
     }
 }
 ```
-> If you decide to override the `close()` method, you also have to call the `super.close()` to tear down the cache appropriately.
+> If you decide to override the `close()` method, you also have to call the `super.close()` to tear down the policy appropriately.
 
 Then you can simply inject your custom policy implementation into the BetterConfig client:
 ```java
@@ -202,7 +202,7 @@ public class MyCustomCache extends ConfigCache {
 }
 ```
 
-Using your custom cache implementation:
+Then use your custom cache implementation:
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
                 .cache(new MyCustomCache()) // inject your custom cache
@@ -218,8 +218,8 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
 ### Force refresh
-Any time you want to refresh the cached configuration with the latest one, you can call the `forceRefresh()` on the client.
-This will make a fetch and will update the local cache.
+Any time you want to refresh the cached configuration with the latest one, you can call the `forceRefresh()` method of the library,
+which will initiate a new fetch and will update the local cache.
 
 ## Logging
 The BetterConfig client uses the [slf4j](https://www.slf4j.org)'s facade for logging.

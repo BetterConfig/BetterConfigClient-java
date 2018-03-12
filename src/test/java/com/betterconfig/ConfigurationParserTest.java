@@ -10,17 +10,17 @@ public class ConfigurationParserTest {
 
     @Test
     public void parseThrowsArgumentInvalid() {
-        assertThrows(ParsingFailedException.class, () -> parser.parse(Object.class, null));
-        assertThrows(ParsingFailedException.class, () -> parser.parse(Object.class, ""));
+        assertThrows(IllegalArgumentException.class, () -> parser.parse(Object.class, null));
+        assertThrows(IllegalArgumentException.class, () -> parser.parse(Object.class, ""));
     }
 
     @Test
     public void parseValueThrowsArgumentInvalid() {
-        assertThrows(ParsingFailedException.class, () -> parser.parseValue(Object.class, null, "key"));
-        assertThrows(ParsingFailedException.class, () -> parser.parseValue(Object.class, "", "key"));
-        assertThrows(ParsingFailedException.class, () -> parser.parseValue(Object.class, "config", null));
-        assertThrows(ParsingFailedException.class, () -> parser.parseValue(Object.class, "config", ""));
-        assertThrows(ParsingFailedException.class, () -> parser.parseValue(Object.class, "config", "key"));
+        assertThrows(IllegalArgumentException.class, () -> parser.parseValue(Object.class, null, "key"));
+        assertThrows(IllegalArgumentException.class, () -> parser.parseValue(Object.class, "", "key"));
+        assertThrows(IllegalArgumentException.class, () -> parser.parseValue(Object.class, "config", null));
+        assertThrows(IllegalArgumentException.class, () -> parser.parseValue(Object.class, "config", ""));
+        assertThrows(IllegalArgumentException.class, () -> parser.parseValue(Object.class, "config", "key"));
     }
 
     @Test
