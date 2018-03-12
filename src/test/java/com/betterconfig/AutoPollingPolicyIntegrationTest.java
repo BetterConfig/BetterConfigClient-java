@@ -8,14 +8,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-public class AlwaysFetchingPolicyTest {
+public class AutoPollingPolicyIntegrationTest {
     private RefreshPolicy policy;
     private MockWebServer server;
 
@@ -27,13 +25,22 @@ public class AlwaysFetchingPolicyTest {
         ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
         ConfigCache cache = new InMemoryConfigCache();
         fetcher.setUrl(this.server.url("/").toString());
-        this.policy = new AlwaysFetchingPolicy(fetcher,cache);
+        this.policy = AutoPollingPolicy.newBuilder()
+                .autoPollRateInSeconds(2)
+                .build(fetcher,cache);
     }
 
     @AfterEach
     public void tearDown() throws IOException {
         this.policy.close();
         this.server.shutdown();
+    }
+
+    @Test
+    public void ensuresPollingIntervalGreaterThanTwoSeconds() {
+        assertThrows(IllegalArgumentException.class, ()-> AutoPollingPolicy.newBuilder()
+                .autoPollRateInSeconds(1)
+                .build(new ConfigFetcher(new OkHttpClient.Builder().build(), ""), new InMemoryConfigCache()));
     }
 
     @Test
@@ -44,24 +51,42 @@ public class AlwaysFetchingPolicyTest {
         //first call
         assertEquals("test", this.policy.getConfigurationJsonAsync().get());
 
+        //wait for cache refresh
+        Thread.sleep(6000);
+
         //next call will get the new value
         assertEquals("test2", this.policy.getConfigurationJsonAsync().get());
     }
 
     @Test
-    public void getCacheFails() throws InterruptedException, ExecutionException {
-        ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
-        fetcher.setUrl(this.server.url("/").toString());
-        AlwaysFetchingPolicy lPolicy = new AlwaysFetchingPolicy(fetcher, new FailingCache());
-
+    public void getMany() throws InterruptedException, ExecutionException {
         this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test"));
-        this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test2").setBodyDelay(3, TimeUnit.SECONDS));
+        this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test2"));
+        this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test3"));
+        this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test4"));
 
-        //first call
-        assertEquals("test", lPolicy.getConfigurationJsonAsync().get());
+        //first calls
+        assertEquals("test", this.policy.getConfigurationJsonAsync().get());
+        assertEquals("test", this.policy.getConfigurationJsonAsync().get());
+        assertEquals("test", this.policy.getConfigurationJsonAsync().get());
+
+        //wait for cache refresh
+        Thread.sleep(2500);
 
         //next call will get the new value
-        assertEquals("test2", lPolicy.getConfigurationJsonAsync().get());
+        assertEquals("test2", this.policy.getConfigurationJsonAsync().get());
+
+        //wait for cache refresh
+        Thread.sleep(2500);
+
+        //next call will get the new value
+        assertEquals("test3", this.policy.getConfigurationJsonAsync().get());
+
+        //wait for cache refresh
+        Thread.sleep(2500);
+
+        //next call will get the new value
+        assertEquals("test4", this.policy.getConfigurationJsonAsync().get());
     }
 
     @Test
@@ -72,26 +97,11 @@ public class AlwaysFetchingPolicyTest {
         //first call
         assertEquals("test", this.policy.getConfigurationJsonAsync().get());
 
+        //wait for cache invalidation
+        Thread.sleep(3000);
+
         //previous value returned because of the refresh failure
         assertEquals("test", this.policy.getConfigurationJsonAsync().get());
     }
-
-    @Test
-    public void getFetchedSameResponseNotUpdatesCache() throws Exception {
-        String result = "test";
-
-        ConfigFetcher fetcher = mock(ConfigFetcher.class);
-        ConfigCache cache = mock(ConfigCache.class);
-
-        when(cache.get()).thenReturn(result);
-
-        when(fetcher.getConfigurationJsonStringAsync())
-                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.Fetched, result)));
-
-        AlwaysFetchingPolicy policy = new AlwaysFetchingPolicy(fetcher, cache);
-
-        assertEquals("test", policy.getConfigurationJsonAsync().get());
-
-        verify(cache, never()).write(result);
-    }
 }
+

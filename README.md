@@ -42,6 +42,14 @@ if(isMyAwesomeFeatureEnabled) {
     //show your awesome feature to the world!
 }
 ```
+Or use the async APIs:
+```java
+client.getValueAsync(Boolean.class, "key-of-my-awesome-feature", false)
+    .thenAccept(isMyAwesomeFeatureEnabled -> {
+         //show your awesome feature to the world!
+    });
+```
+
 ## Android
 The minimum supported sdk version is 26 (oreo). Java 1.8 or later is required.
 ```groovy
@@ -187,6 +195,9 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                 .maxWaitTimeForSyncCallsInSeconds(2) // set the max wait time
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
+### Force refresh
+Any time you want to refresh the cached configuration with the latest one, you can call the `forceRefresh()` on the client.
+This will make a fetch and will update the local cache.
 
 ## Logging
 The BetterConfig client uses the [slf4j](https://www.slf4j.org)'s facade for logging.

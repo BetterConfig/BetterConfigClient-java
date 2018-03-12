@@ -18,11 +18,12 @@ public class AlwaysFetchingPolicy extends RefreshPolicy {
         return super.fetcher().getConfigurationJsonStringAsync()
                 .thenApply(response -> {
                     String cached = super.cache().get();
-                    if (response.isFetched() && !response.config().equals(cached)) {
+                    String config = response.config();
+                    if (response.isFetched() && !config.equals(cached)) {
                         super.cache().set(response.config());
                     }
 
-                    return response.isFetched() ? response.config() : cached;
+                    return response.isFetched() ? config : cached;
                 });
     }
 }

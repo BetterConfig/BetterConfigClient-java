@@ -62,7 +62,7 @@ public class BetterConfigClient implements ConfigurationProvider {
                     : this.getConfigurationJsonStringAsync().get();
         } catch (Exception e) {
             logger.error("An error occurred during reading the configuration.", e);
-            return null;
+            return this.refreshPolicy.getLatestCachedValue();
         }
     }
 
@@ -79,7 +79,7 @@ public class BetterConfigClient implements ConfigurationProvider {
                     : this.getConfigurationAsync(classOfT, defaultValue).get();
         } catch (Exception e) {
             logger.error("An error occurred during deserialization.", e);
-            return defaultValue;
+            return this.getDefaultValue(classOfT, defaultValue);
         }
     }
 
@@ -88,7 +88,7 @@ public class BetterConfigClient implements ConfigurationProvider {
         return this.refreshPolicy.getConfigurationJsonAsync()
                 .thenApply(config -> config == null
                         ? defaultValue
-                        : gson.fromJson(config, classOfT));
+                        : this.deserializeJson(classOfT, config, defaultValue));
     }
 
     @Override
@@ -96,13 +96,16 @@ public class BetterConfigClient implements ConfigurationProvider {
         if(key == null || key.isEmpty())
             throw new IllegalArgumentException("key is null or empty");
 
+        if(classOfT != String.class && classOfT != Integer.class && classOfT != Double.class && classOfT != Boolean.class)
+            throw new IllegalArgumentException("Only String, Integer, Double or Boolean types are supported");
+
         try {
             return this.maxWaitTimeForSyncCallsInSeconds > 0
                     ? this.getValueAsync(classOfT, key, defaultValue).get(this.maxWaitTimeForSyncCallsInSeconds, TimeUnit.SECONDS)
                     : this.getValueAsync(classOfT, key, defaultValue).get();
         } catch (Exception e) {
             logger.error("An error occurred during the reading of the value for key '"+key+"'.", e);
-            return defaultValue;
+            return this.getDefaultJsonValue(classOfT, key, defaultValue);
         }
     }
 
@@ -111,20 +114,11 @@ public class BetterConfigClient implements ConfigurationProvider {
         if(key == null || key.isEmpty())
             throw new IllegalArgumentException("key is null or empty");
 
-        return this.getJsonElementAsync(key)
-                .thenApply(element -> {
-                    if(element == null) return defaultValue;
+        if(classOfT != String.class && classOfT != Integer.class && classOfT != Double.class && classOfT != Boolean.class)
+            throw new IllegalArgumentException("Only String, Integer, Double or Boolean types are supported");
 
-                    if(classOfT == String.class)
-                        return classOfT.cast(element.getAsString());
-                    else if(classOfT == Integer.class)
-                        return classOfT.cast(element.getAsInt());
-                    else if(classOfT == Double.class)
-                        return classOfT.cast(element.getAsDouble());
-                    else if (classOfT == Boolean.class)
-                        return classOfT.cast(element.getAsBoolean());
-                    else throw new IllegalArgumentException("Only String, Integer, Double or Boolean types are supported");
-                });
+        return this.getConfigurationJsonStringAsync()
+                .thenApply(config -> this.getJsonValue(classOfT, config, key, defaultValue));
     }
 
     @Override
@@ -146,11 +140,50 @@ public class BetterConfigClient implements ConfigurationProvider {
         this.refreshPolicy.close();
     }
 
-    private CompletableFuture<JsonElement> getJsonElementAsync(String key) {
-        return this.refreshPolicy.getConfigurationJsonAsync()
-                .thenApply(config -> config == null
-                        ? null
-                        : this.parser.parse(config).getAsJsonObject().get(key));
+    private <T> T getJsonValue(Class<T> classOfT, String config, String key, T defaultValue) {
+        try {
+            JsonElement element = this.parser.parse(config).getAsJsonObject().get(key);
+            if (element == null) return defaultValue;
+
+            if (classOfT == String.class)
+                return classOfT.cast(element.getAsString());
+            else if (classOfT == Integer.class)
+                return classOfT.cast(element.getAsInt());
+            else if (classOfT == Double.class)
+                return classOfT.cast(element.getAsDouble());
+            else if (classOfT == Boolean.class)
+                return classOfT.cast(element.getAsBoolean());
+        } catch (Exception e) {
+            logger.error("An error occurred during the deserialization of the value for key '"+key+"'.", e);
+        }
+
+        return defaultValue;
+    }
+
+    private <T> T getDefaultValue(Class<T> classOfT, T defaultValue) {
+        try {
+            String latest = this.refreshPolicy.getLatestCachedValue();
+            return latest != null ? this.deserializeJson(classOfT, latest, defaultValue) : defaultValue;
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private <T> T getDefaultJsonValue(Class<T> classOfT, String key, T defaultValue) {
+        try {
+            String latest = this.refreshPolicy.getLatestCachedValue();
+            return latest != null ? this.getJsonValue(classOfT, latest, key, defaultValue) : defaultValue;
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private <T> T deserializeJson(Class<T> classOfT, String config, T defaultValue) {
+        try {
+            return gson.fromJson(config, classOfT);
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**

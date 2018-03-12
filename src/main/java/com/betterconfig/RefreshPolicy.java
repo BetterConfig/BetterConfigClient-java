@@ -60,6 +60,10 @@ public abstract class RefreshPolicy implements Closeable {
                 });
     }
 
+    String getLatestCachedValue() {
+        return this.cache.inMemoryValue();
+    }
+
     @Override
     public void close() throws IOException {
         this.configFetcher.close();

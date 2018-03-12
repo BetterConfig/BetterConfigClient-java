@@ -32,11 +32,12 @@ public class AutoPollingPolicy extends RefreshPolicy {
             try {
                 FetchResponse response = super.fetcher().getConfigurationJsonStringAsync().get();
                 String cached = super.cache().get();
-                if (response.isFetched() && !response.config().equals(cached)) {
+                if (response.isFetched() && !response.config().equals(cached))
                     super.cache().set(response.config());
-                    if (!initialized.getAndSet(true))
-                        initFuture.complete(null);
-                }
+
+                if(!response.isFailed() && !initialized.getAndSet(true))
+                    initFuture.complete(null);
+
             } catch (Exception e){
                 logger.error("An error occurred during the scheduler poll execution", e);
             }
@@ -48,7 +49,7 @@ public class AutoPollingPolicy extends RefreshPolicy {
         if(this.initFuture.isDone())
             return CompletableFuture.completedFuture(super.cache().get());
 
-        return this.initFuture.thenApplyAsync(v -> this.cache().get());
+        return this.initFuture.thenApplyAsync(v -> super.cache().get());
     }
 
     @Override

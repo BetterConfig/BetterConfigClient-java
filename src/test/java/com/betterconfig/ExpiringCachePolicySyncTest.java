@@ -8,10 +8,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class ExpiringCachePolicySyncTest {
     private RefreshPolicy policy;
@@ -87,5 +89,25 @@ public class ExpiringCachePolicySyncTest {
 
         //previous value returned because of the refresh failure
         assertEquals("test", this.policy.getConfigurationJsonAsync().get());
+    }
+
+    @Test
+    public void getFetchedSameResponseNotUpdatesCache() throws Exception {
+        String result = "test";
+
+        ConfigFetcher fetcher = mock(ConfigFetcher.class);
+        ConfigCache cache = mock(ConfigCache.class);
+
+        when(cache.get()).thenReturn(result);
+
+        when(fetcher.getConfigurationJsonStringAsync())
+                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.Fetched, result)));
+
+        ExpiringCachePolicy policy = ExpiringCachePolicy.newBuilder()
+                .build(fetcher, cache);
+
+        assertEquals("test", policy.getConfigurationJsonAsync().get());
+
+        verify(cache, never()).write(result);
     }
 }

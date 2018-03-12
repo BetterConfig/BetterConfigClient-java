@@ -38,7 +38,7 @@ public abstract class ConfigCache {
      *
      * @return the cached value in memory.
      */
-    protected String inMemoryValue() { return this.inMemoryValue; }
+    public String inMemoryValue() { return this.inMemoryValue; }
 
     /**
      * Child classes has to implement this method, the {@link BetterConfigClient}
