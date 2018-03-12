@@ -154,21 +154,13 @@ public class BetterConfigClient implements ConfigurationProvider {
     }
 
     private <T> T getDefaultValue(Class<T> classOfT, T defaultValue) {
-        try {
-            String latest = this.refreshPolicy.getLatestCachedValue();
-            return latest != null ? this.deserializeJson(classOfT, latest, defaultValue) : defaultValue;
-        } catch (Exception e) {
-            return defaultValue;
-        }
+        String latest = this.refreshPolicy.getLatestCachedValue();
+        return latest != null ? this.deserializeJson(classOfT, latest, defaultValue) : defaultValue;
     }
 
     private <T> T getDefaultJsonValue(Class<T> classOfT, String key, T defaultValue) {
-        try {
-            String latest = this.refreshPolicy.getLatestCachedValue();
-            return latest != null ? this.getJsonValue(classOfT, latest, key, defaultValue) : defaultValue;
-        } catch (Exception e) {
-            return defaultValue;
-        }
+        String latest = this.refreshPolicy.getLatestCachedValue();
+        return latest != null ? this.getJsonValue(classOfT, latest, key, defaultValue) : defaultValue;
     }
 
     private <T> T deserializeJson(Class<T> classOfT, String config, T defaultValue) {
