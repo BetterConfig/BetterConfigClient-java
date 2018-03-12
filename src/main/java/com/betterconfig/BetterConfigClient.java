@@ -20,13 +20,13 @@ public class BetterConfigClient implements ConfigurationProvider {
     private final RefreshPolicy refreshPolicy;
     private final Gson gson = new Gson();
     private final JsonParser parser = new JsonParser();
-    private final int maxWaitTimeToSyncCallsInSeconds;
+    private final int maxWaitTimeForSyncCallsInSeconds;
 
     private BetterConfigClient(String projectSecret, Builder builder) throws IllegalArgumentException {
         if(projectSecret == null || projectSecret.isEmpty())
             throw new IllegalArgumentException("projectSecret is null or empty");
 
-        this.maxWaitTimeToSyncCallsInSeconds = builder.maxWaitTimeToSyncCallsInSeconds;
+        this.maxWaitTimeForSyncCallsInSeconds = builder.maxWaitTimeForSyncCallsInSeconds;
 
         ConfigFetcher fetcher = new ConfigFetcher(builder.httpClient == null
                 ? new OkHttpClient
@@ -57,8 +57,8 @@ public class BetterConfigClient implements ConfigurationProvider {
     @Override
     public String getConfigurationJsonString() {
         try {
-            return this.maxWaitTimeToSyncCallsInSeconds > 0
-                    ? this.getConfigurationJsonStringAsync().get(this.maxWaitTimeToSyncCallsInSeconds, TimeUnit.SECONDS)
+            return this.maxWaitTimeForSyncCallsInSeconds > 0
+                    ? this.getConfigurationJsonStringAsync().get(this.maxWaitTimeForSyncCallsInSeconds, TimeUnit.SECONDS)
                     : this.getConfigurationJsonStringAsync().get();
         } catch (Exception e) {
             logger.error("An error occurred during reading the configuration.", e);
@@ -74,8 +74,8 @@ public class BetterConfigClient implements ConfigurationProvider {
     @Override
     public <T> T getConfiguration(Class<T> classOfT, T defaultValue) {
         try {
-            return this.maxWaitTimeToSyncCallsInSeconds > 0
-                    ? this.getConfigurationAsync(classOfT, defaultValue).get(this.maxWaitTimeToSyncCallsInSeconds, TimeUnit.SECONDS)
+            return this.maxWaitTimeForSyncCallsInSeconds > 0
+                    ? this.getConfigurationAsync(classOfT, defaultValue).get(this.maxWaitTimeForSyncCallsInSeconds, TimeUnit.SECONDS)
                     : this.getConfigurationAsync(classOfT, defaultValue).get();
         } catch (Exception e) {
             logger.error("An error occurred during deserialization.", e);
@@ -97,8 +97,8 @@ public class BetterConfigClient implements ConfigurationProvider {
             throw new IllegalArgumentException("key is null or empty");
 
         try {
-            return this.maxWaitTimeToSyncCallsInSeconds > 0
-                    ? this.getValueAsync(classOfT, key, defaultValue).get(this.maxWaitTimeToSyncCallsInSeconds, TimeUnit.SECONDS)
+            return this.maxWaitTimeForSyncCallsInSeconds > 0
+                    ? this.getValueAsync(classOfT, key, defaultValue).get(this.maxWaitTimeForSyncCallsInSeconds, TimeUnit.SECONDS)
                     : this.getValueAsync(classOfT, key, defaultValue).get();
         } catch (Exception e) {
             logger.error("An error occurred during the reading of the value for key '"+key+"'.", e);
@@ -168,7 +168,7 @@ public class BetterConfigClient implements ConfigurationProvider {
     public static class Builder {
         private OkHttpClient httpClient;
         private ConfigCache cache;
-        private int maxWaitTimeToSyncCallsInSeconds;
+        private int maxWaitTimeForSyncCallsInSeconds;
         private BiFunction<ConfigFetcher, ConfigCache, RefreshPolicy> refreshPolicy;
 
         /**
@@ -208,16 +208,16 @@ public class BetterConfigClient implements ConfigurationProvider {
          * Sets the maximum time in seconds at most how long the synchronous calls
          * e.g. {@code client.getConfiguration(...)} have to be blocked.
          *
-         * @param maxWaitTimeToSyncCallsInSeconds the maximum time in seconds at most how long the synchronous calls
+         * @param maxWaitTimeForSyncCallsInSeconds the maximum time in seconds at most how long the synchronous calls
          *                                        e.g. {@code client.getConfiguration(...)} have to be blocked.
          * @return the builder.
          * @throws IllegalArgumentException when the given value is lesser than 2.
          */
-        public Builder maxWaitTimeToSyncCallsInSeconds(int maxWaitTimeToSyncCallsInSeconds) {
-            if(maxWaitTimeToSyncCallsInSeconds < 2)
-                throw new IllegalArgumentException("maxWaitTimeToSyncCallsInSeconds cannot be less than 2 seconds");
+        public Builder maxWaitTimeForSyncCallsInSeconds(int maxWaitTimeForSyncCallsInSeconds) {
+            if(maxWaitTimeForSyncCallsInSeconds < 2)
+                throw new IllegalArgumentException("maxWaitTimeForSyncCallsInSeconds cannot be less than 2 seconds");
 
-            this.maxWaitTimeToSyncCallsInSeconds = maxWaitTimeToSyncCallsInSeconds;
+            this.maxWaitTimeForSyncCallsInSeconds = maxWaitTimeForSyncCallsInSeconds;
             return this;
         }
 

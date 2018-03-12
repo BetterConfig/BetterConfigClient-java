@@ -179,5 +179,14 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
 
+#### Maximum wait time for synchronous calls
+You have the option to set a timeout value for the synchronous methods of the library (`getConfigurationJsonString()`, `getConfiguration()`, `getValue()` etc.) which means
+when a sync call takes longer than the timeout value, it'll return with the default.
+```java
+BetterConfigClient client = BetterConfigClient.newBuilder()
+                .maxWaitTimeForSyncCallsInSeconds(2) // set the max wait time
+                .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
+```
+
 ## Logging
 The BetterConfig client uses the [slf4j](https://www.slf4j.org)'s facade for logging.

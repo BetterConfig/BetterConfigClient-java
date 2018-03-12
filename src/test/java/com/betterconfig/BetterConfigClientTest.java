@@ -72,7 +72,7 @@ public class BetterConfigClientTest {
     @Test
     public void getConfigurationJsonStringWithDefaultConfigTimout() {
         BetterConfigClient cl = BetterConfigClient.newBuilder()
-                .maxWaitTimeToSyncCallsInSeconds(2)
+                .maxWaitTimeForSyncCallsInSeconds(2)
                 .build(SECRET);
 
         // makes a call to a real url which would fail, null expected
@@ -83,7 +83,7 @@ public class BetterConfigClientTest {
     @Test
     public void getConfigurationJsonWithDefaultConfigTimout() {
         BetterConfigClient cl = BetterConfigClient.newBuilder()
-                .maxWaitTimeToSyncCallsInSeconds(2)
+                .maxWaitTimeForSyncCallsInSeconds(2)
                 .build(SECRET);
 
         // makes a call to a real url which would fail, default expected
@@ -94,7 +94,7 @@ public class BetterConfigClientTest {
     @Test
     public void getValueWithDefaultConfigTimout() {
         BetterConfigClient cl = BetterConfigClient.newBuilder()
-                .maxWaitTimeToSyncCallsInSeconds(2)
+                .maxWaitTimeForSyncCallsInSeconds(2)
                 .build(SECRET);
 
         // makes a call to a real url which would fail, default expected

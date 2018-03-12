@@ -3,12 +3,12 @@ package com.betterconfig;
 public class FailingCache extends ConfigCache {
 
     @Override
-    protected String getInternal() throws Exception {
+    protected String read() throws Exception {
         throw new Exception();
     }
 
     @Override
-    protected void setInternal(String value) throws Exception {
+    protected void write(String value) throws Exception {
         throw new Exception();
     }
 }
