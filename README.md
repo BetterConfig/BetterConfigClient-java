@@ -42,7 +42,7 @@ if(isMyAwesomeFeatureEnabled) {
     //show your awesome feature to the world!
 }
 ```
-### Android
+## Android
 The minimum supported sdk version is 26 (oreo). Java 1.8 or later is required.
 ```groovy
 android {
@@ -179,7 +179,7 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
 
-#### Maximum wait time for synchronous calls
+### Maximum wait time for synchronous calls
 You have the option to set a timeout value for the synchronous methods of the library (`getConfigurationJsonString()`, `getConfiguration()`, `getValue()` etc.) which means
 when a sync call takes longer than the timeout value, it'll return with the default.
 ```java
