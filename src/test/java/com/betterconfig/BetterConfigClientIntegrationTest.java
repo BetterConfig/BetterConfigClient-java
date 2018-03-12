@@ -97,6 +97,17 @@ public class BetterConfigClientIntegrationTest {
     }
 
     @Test
+    public void getConfigurationReturnsDefaultOnExceptionRepeatedly() {
+        String badJson = "{ test: test] }";
+        Sample def = new Sample();
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(badJson));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("test").setBodyDelay(5, TimeUnit.SECONDS));
+
+        Sample result = this.client.getConfiguration(Sample.class,def);
+        assertSame(def, result);
+    }
+
+    @Test
     public void getStringValue() {
         String sValue = "ááúúóüüőőööúúűű";
         String result = "{ \"fakeKey\":\""+sValue+"\" }";
@@ -120,21 +131,6 @@ public class BetterConfigClientIntegrationTest {
         server.enqueue(new MockResponse().setResponseCode(200).setBody(result));
         String config = this.client.getValue(String.class,"fakeKey", def);
         assertEquals(def, config);
-    }
-
-    @Test
-    public void getValueNullKey() {
-        assertThrows(IllegalArgumentException.class, () -> this.client.getValue(Boolean.class,null, false));
-    }
-
-    @Test
-    public void getValueEmptyKey() {
-        assertThrows(IllegalArgumentException.class, () -> this.client.getValue(Boolean.class,"", false));
-    }
-
-    @Test
-    public void getValueInvalidClass() {
-        assertThrows(IllegalArgumentException.class, () -> this.client.getValue(Sample.class,"", Sample.Empty));
     }
 
     @Test
@@ -231,6 +227,34 @@ public class BetterConfigClientIntegrationTest {
         assertEquals("test", this.client.getConfigurationJsonString());
         this.client.forceRefresh();
         assertEquals("test", this.client.getConfigurationJsonString());
+    }
+
+    @Test
+    public void getConfigurationJsonStringWithDefaultConfigTimeout() {
+        BetterConfigClient cl = BetterConfigClient.newBuilder()
+                .maxWaitTimeForSyncCallsInSeconds(2)
+                .build(SECRET);
+
+        // makes a call to a real url which would fail, null expected
+        String config = cl.getConfigurationJsonString();
+        assertEquals(null, config);
+    }
+
+    @Test
+    public void forceRefreshWithTimeout() {
+        BetterConfigClient cl = BetterConfigClient.newBuilder()
+                .maxWaitTimeForSyncCallsInSeconds(2)
+                .build(SECRET);
+
+        cl.forceRefresh();
+    }
+
+    @Test
+    public void getConfigurationJsonStringWithDefaultConfig() {
+        BetterConfigClient cl = new BetterConfigClient(SECRET);
+
+        // makes a call to a real url which would fail, timeout expected
+        assertThrows(TimeoutException.class, () -> cl.getConfigurationJsonStringAsync().get(2, TimeUnit.SECONDS));
     }
 
     static class Sample {

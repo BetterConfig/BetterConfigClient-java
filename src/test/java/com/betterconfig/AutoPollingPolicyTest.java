@@ -10,6 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 public class AutoPollingPolicyTest {
@@ -86,5 +87,14 @@ public class AutoPollingPolicyTest {
 
         server.close();
         policy.close();
+    }
+
+    @Test
+    public void throwsWhenListenerNull() {
+        ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
+        ConfigCache cache = new InMemoryConfigCache();
+        assertThrows(IllegalArgumentException.class, ()-> AutoPollingPolicy.newBuilder()
+                .configurationChangeListener(null)
+                .build(fetcher, cache));
     }
 }

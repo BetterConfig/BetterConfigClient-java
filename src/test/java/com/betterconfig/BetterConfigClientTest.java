@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,25 +47,6 @@ public class BetterConfigClientTest {
     }
 
     @Test
-    public void getConfigurationJsonStringWithDefaultConfigTimeout() {
-        BetterConfigClient cl = BetterConfigClient.newBuilder()
-                .maxWaitTimeForSyncCallsInSeconds(2)
-                .build(SECRET);
-
-        // makes a call to a real url which would fail, null expected
-        String config = cl.getConfigurationJsonString();
-        assertEquals(null, config);
-    }
-
-    @Test
-    public void getConfigurationJsonStringWithDefaultConfig() {
-        BetterConfigClient cl = new BetterConfigClient(SECRET);
-
-        // makes a call to a real url which would fail, timeout expected
-        assertThrows(TimeoutException.class, () -> cl.getConfigurationJsonStringAsync().get(2, TimeUnit.SECONDS));
-    }
-
-    @Test
     public void getConfigurationJsonWithDefaultConfigTimeout() {
         BetterConfigClient cl = BetterConfigClient.newBuilder()
                 .maxWaitTimeForSyncCallsInSeconds(2)
@@ -78,7 +58,7 @@ public class BetterConfigClientTest {
     }
 
     @Test
-    public void getValueWithDefaultConfigTimeout() {
+    public void getValueWithDefaultConfigTimeout() throws IOException {
         BetterConfigClient cl = BetterConfigClient.newBuilder()
                 .maxWaitTimeForSyncCallsInSeconds(2)
                 .build(SECRET);
@@ -86,6 +66,8 @@ public class BetterConfigClientTest {
         // makes a call to a real url which would fail, default expected
         boolean config = cl.getValue(Boolean.class, "key", true);
         assertTrue(config);
+
+        cl.close();
     }
 
     @Test
@@ -138,5 +120,69 @@ public class BetterConfigClientTest {
 
         server.close();
         cl.close();
+    }
+
+    @Test
+    public void getConfigurationReturnsDefaultOnExceptionRepeatedly() throws IOException {
+        MockWebServer server = new MockWebServer();
+        server.start();
+
+        BetterConfigClient cl = BetterConfigClient.newBuilder()
+                .refreshPolicy((f, c) -> {
+                    f.setUrl(server.url("/").toString());
+                    return new AlwaysFetchingPolicy(f,c);
+                })
+                .maxWaitTimeForSyncCallsInSeconds(2)
+                .build(SECRET);
+
+        String badJson = "{ test: test] }";
+        BetterConfigClientIntegrationTest.Sample def = new BetterConfigClientIntegrationTest.Sample();
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(badJson));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("test").setBodyDelay(5, TimeUnit.SECONDS));
+
+        assertSame(def, cl.getConfiguration(BetterConfigClientIntegrationTest.Sample.class, def));
+
+        assertSame(def, cl.getConfiguration(BetterConfigClientIntegrationTest.Sample.class, def));
+
+        server.shutdown();
+        cl.close();
+    }
+
+    @Test
+    public void getValueReturnsDefaultOnExceptionRepeatedly() throws IOException {
+        MockWebServer server = new MockWebServer();
+        server.start();
+
+        BetterConfigClient cl = BetterConfigClient.newBuilder()
+                .refreshPolicy((f, c) -> {
+                    f.setUrl(server.url("/").toString());
+                    return new AlwaysFetchingPolicy(f,c);
+                })
+                .maxWaitTimeForSyncCallsInSeconds(2)
+                .build(SECRET);
+
+        String badJson = "{ test: test] }";
+        String def = "def";
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(badJson));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("test").setBodyDelay(5, TimeUnit.SECONDS));
+
+        assertSame(def, cl.getValue(String.class, "test", def));
+
+        assertSame(def, cl.getValue(String.class, "test", def));
+
+        server.shutdown();
+        cl.close();
+    }
+
+    @Test
+    public void getValueInvalidArguments() {
+        BetterConfigClient client = new BetterConfigClient("secret");
+        assertThrows(IllegalArgumentException.class, () -> client.getValue(Boolean.class,null, false));
+        assertThrows(IllegalArgumentException.class, () -> client.getValue(Boolean.class,"", false));
+        assertThrows(IllegalArgumentException.class, () -> client.getValue(BetterConfigClientIntegrationTest.Sample.class,"key", BetterConfigClientIntegrationTest.Sample.Empty));
+
+        assertThrows(IllegalArgumentException.class, () -> client.getValueAsync(Boolean.class,null, false).get());
+        assertThrows(IllegalArgumentException.class, () -> client.getValueAsync(Boolean.class,"", false).get());
+        assertThrows(IllegalArgumentException.class, () -> client.getValueAsync(BetterConfigClientIntegrationTest.Sample.class,"key", BetterConfigClientIntegrationTest.Sample.Empty).get());
     }
 }

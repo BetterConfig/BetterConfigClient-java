@@ -125,7 +125,10 @@ public class BetterConfigClient implements ConfigurationProvider {
     @Override
     public void forceRefresh() {
         try {
-            this.forceRefreshAsync().get();
+            if(this.maxWaitTimeForSyncCallsInSeconds > 0)
+                this.forceRefreshAsync().get(this.maxWaitTimeForSyncCallsInSeconds, TimeUnit.SECONDS);
+            else
+                this.forceRefreshAsync().get();
         } catch (Exception e) {
             logger.error("An error occurred during the refresh.", e);
         }

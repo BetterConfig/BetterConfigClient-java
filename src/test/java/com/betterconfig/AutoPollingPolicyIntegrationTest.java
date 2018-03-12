@@ -62,7 +62,8 @@ public class AutoPollingPolicyIntegrationTest {
     @Test
     public void configChanged() throws InterruptedException {
         AtomicReference<String> newConfig  = new AtomicReference<>();
-        this.policy.addConfigurationChangeListener((parser, newConfiguration) -> newConfig.set(newConfiguration));
+        ConfigurationChangeListener listener = (parser, newConfiguration) -> newConfig.set(newConfiguration);
+        this.policy.addConfigurationChangeListener(listener);
 
         this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test"));
         this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test2"));
@@ -74,6 +75,8 @@ public class AutoPollingPolicyIntegrationTest {
         Thread.sleep(2000);
 
         assertEquals("test2", newConfig.get());
+
+        this.policy.removeConfigurationChangeListener(listener);
     }
 
     @Test
