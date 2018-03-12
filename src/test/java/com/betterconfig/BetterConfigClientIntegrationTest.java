@@ -241,15 +241,6 @@ public class BetterConfigClientIntegrationTest {
     }
 
     @Test
-    public void forceRefreshWithTimeout() {
-        BetterConfigClient cl = BetterConfigClient.newBuilder()
-                .maxWaitTimeForSyncCallsInSeconds(2)
-                .build(SECRET);
-
-        cl.forceRefresh();
-    }
-
-    @Test
     public void getConfigurationJsonStringWithDefaultConfig() {
         BetterConfigClient cl = new BetterConfigClient(SECRET);
 

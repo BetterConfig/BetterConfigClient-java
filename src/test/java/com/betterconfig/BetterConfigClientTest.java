@@ -138,7 +138,7 @@ public class BetterConfigClientTest {
         String badJson = "{ test: test] }";
         BetterConfigClientIntegrationTest.Sample def = new BetterConfigClientIntegrationTest.Sample();
         server.enqueue(new MockResponse().setResponseCode(200).setBody(badJson));
-        server.enqueue(new MockResponse().setResponseCode(200).setBody("test").setBodyDelay(5, TimeUnit.SECONDS));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(badJson).setBodyDelay(5, TimeUnit.SECONDS));
 
         assertSame(def, cl.getConfiguration(BetterConfigClientIntegrationTest.Sample.class, def));
 
@@ -164,11 +164,32 @@ public class BetterConfigClientTest {
         String badJson = "{ test: test] }";
         String def = "def";
         server.enqueue(new MockResponse().setResponseCode(200).setBody(badJson));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(badJson).setBodyDelay(5, TimeUnit.SECONDS));
+
+        assertSame(def, cl.getValue(String.class, "test", def));
+
+        assertSame(def, cl.getValue(String.class, "test", def));
+
+        server.shutdown();
+        cl.close();
+    }
+
+    @Test
+    public void forceRefreshWithTimeout() throws IOException {
+        MockWebServer server = new MockWebServer();
+        server.start();
+
+        BetterConfigClient cl = BetterConfigClient.newBuilder()
+                .refreshPolicy((f, c) -> {
+                    f.setUrl(server.url("/").toString());
+                    return new AlwaysFetchingPolicy(f,c);
+                })
+                .maxWaitTimeForSyncCallsInSeconds(2)
+                .build(SECRET);
+
         server.enqueue(new MockResponse().setResponseCode(200).setBody("test").setBodyDelay(5, TimeUnit.SECONDS));
 
-        assertSame(def, cl.getValue(String.class, "test", def));
-
-        assertSame(def, cl.getValue(String.class, "test", def));
+        cl.forceRefresh();
 
         server.shutdown();
         cl.close();

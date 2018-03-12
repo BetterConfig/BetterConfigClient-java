@@ -65,7 +65,10 @@ android {
     }
 }
 ```
-
+You also have to put this line into your manifest xml to enable the library access to the network.
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
 ## Configuration
 ### HttpClient
 The BetterConfig client internally uses an [OkHttpClient](https://github.com/square/okhttp) instance to fetch the latest configuration over HTTP. You have the option to override the internal HttpClient with your customized one. For example if your application runs behind a proxy you can do the following:
