@@ -118,7 +118,7 @@ client.getRefreshPolicy(AutoPollingPolicy.class)
         // parser.parseValue(Boolean.class, newConfiguration, "key-of-my-awesome-feature")  
     });
 ```
-
+You can check this in action in the [Android sample](https://github.com/BetterConfig/BetterConfigClient-java/tree/dev/samples/android).
 #### 2. Expiring cache policy
 This policy uses an expiring cache to maintain the internally stored configuration. 
 ##### Cache refresh interval 
@@ -226,3 +226,8 @@ which will initiate a new fetch and will update the local cache.
 
 ## Logging
 The BetterConfig client uses the [slf4j](https://www.slf4j.org)'s facade for logging.
+
+## Samples
+* [Console](https://github.com/BetterConfig/BetterConfigClient-java/tree/dev/samples/console)
+* [Web app](https://github.com/BetterConfig/BetterConfigClient-java/tree/dev/samples/web)
+* [Android](https://github.com/BetterConfig/BetterConfigClient-java/tree/dev/samples/android)
