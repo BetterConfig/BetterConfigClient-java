@@ -225,7 +225,7 @@ Any time you want to refresh the cached configuration with the latest one, you c
 which will initiate a new fetch and will update the local cache.
 
 ## Logging
-The BetterConfig client uses the [slf4j](https://www.slf4j.org)'s facade for logging.
+The BetterConfig client uses the facade of [slf4j](https://www.slf4j.org) for logging.
 
 ## Samples
 * [Console](https://github.com/BetterConfig/BetterConfigClient-java/tree/dev/samples/console)
