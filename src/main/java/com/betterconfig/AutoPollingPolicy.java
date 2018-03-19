@@ -11,6 +11,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Describes a {@link RefreshPolicy} which polls the latest configuration
+ * over HTTP and updates the local cache repeatedly.
+ */
 public class AutoPollingPolicy extends RefreshPolicy {
     private static final Logger LOGGER = LoggerFactory.getLogger(BetterConfigClient.class);
     private static final ConfigurationParser parser = new ConfigurationParser();
@@ -23,7 +27,7 @@ public class AutoPollingPolicy extends RefreshPolicy {
      * Constructor used by the child classes.
      *
      * @param configFetcher the internal config fetcher instance.
-     * @param cache         the internal cache instance.
+     * @param cache the internal cache instance.
      */
     private AutoPollingPolicy(ConfigFetcher configFetcher, ConfigCache cache, Builder builder) {
         super(configFetcher, cache);

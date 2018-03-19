@@ -6,6 +6,9 @@ import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A json parser which can be used to deserialize configuration json strings.
+ */
 public class ConfigurationParser {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationParser.class);
     private final Gson gson = new Gson();

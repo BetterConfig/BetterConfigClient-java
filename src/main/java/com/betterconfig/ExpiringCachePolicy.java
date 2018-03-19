@@ -4,6 +4,10 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Describes a {@link RefreshPolicy} which uses an expiring cache
+ * to maintain the internally stored configuration.
+ */
 public class ExpiringCachePolicy extends RefreshPolicy {
     private Instant lastRefreshedTime;
     private int cacheRefreshRateInSeconds;
@@ -16,7 +20,7 @@ public class ExpiringCachePolicy extends RefreshPolicy {
      * Constructor used by the child classes.
      *
      * @param configFetcher the internal config fetcher instance.
-     * @param cache         the internal cache instance.
+     * @param cache the internal cache instance.
      */
     private ExpiringCachePolicy(ConfigFetcher configFetcher, ConfigCache cache, Builder builder) {
         super(configFetcher, cache);
