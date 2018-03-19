@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AutoPollingPolicy extends RefreshPolicy {
-    private static final Logger logger = LoggerFactory.getLogger(BetterConfigClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BetterConfigClient.class);
     private static final ConfigurationParser parser = new ConfigurationParser();
     private final ScheduledExecutorService scheduler;
     private final CompletableFuture<Void> initFuture;
@@ -50,7 +50,7 @@ public class AutoPollingPolicy extends RefreshPolicy {
                     initFuture.complete(null);
 
             } catch (Exception e){
-                logger.error("An error occurred during the scheduler poll execution", e);
+                LOGGER.error("An error occurred during the scheduler poll execution", e);
             }
         }, 0, builder.autoPollRateInSeconds, TimeUnit.SECONDS);
     }

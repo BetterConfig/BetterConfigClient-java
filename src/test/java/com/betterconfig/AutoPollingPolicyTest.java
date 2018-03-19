@@ -28,7 +28,7 @@ public class AutoPollingPolicyTest {
         doCallRealMethod().when(cache).set(anyString());
 
         when(fetcher.getConfigurationJsonStringAsync())
-                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.Fetched, result)));
+                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.FETCHED, result)));
 
         AutoPollingPolicy policy = AutoPollingPolicy.newBuilder()
                 .autoPollRateInSeconds(2)
@@ -47,7 +47,7 @@ public class AutoPollingPolicyTest {
         when(cache.get()).thenReturn(result);
 
         when(fetcher.getConfigurationJsonStringAsync())
-                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.Fetched, result)));
+                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.FETCHED, result)));
 
         AutoPollingPolicy policy = AutoPollingPolicy.newBuilder()
                 .autoPollRateInSeconds(2)

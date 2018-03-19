@@ -86,7 +86,7 @@ public class AlwaysFetchingPolicyTest {
         when(cache.get()).thenReturn(result);
 
         when(fetcher.getConfigurationJsonStringAsync())
-                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.Fetched, result)));
+                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.FETCHED, result)));
 
         AlwaysFetchingPolicy policy = new AlwaysFetchingPolicy(fetcher, cache);
 

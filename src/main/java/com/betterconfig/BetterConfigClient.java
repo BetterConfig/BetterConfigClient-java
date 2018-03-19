@@ -13,7 +13,7 @@ import java.util.function.BiFunction;
  * A client for handling configurations provided by BetterConfig.
  */
 public class BetterConfigClient implements ConfigurationProvider {
-    private static final Logger logger = LoggerFactory.getLogger(BetterConfigClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BetterConfigClient.class);
     private static final ConfigurationParser parser = new ConfigurationParser();
     private final RefreshPolicy refreshPolicy;
     private final int maxWaitTimeForSyncCallsInSeconds;
@@ -62,7 +62,7 @@ public class BetterConfigClient implements ConfigurationProvider {
                     ? this.getConfigurationJsonStringAsync().get(this.maxWaitTimeForSyncCallsInSeconds, TimeUnit.SECONDS)
                     : this.getConfigurationJsonStringAsync().get();
         } catch (Exception e) {
-            logger.error("An error occurred during reading the configuration.", e);
+            LOGGER.error("An error occurred during reading the configuration.", e);
             return this.refreshPolicy.getLatestCachedValue();
         }
     }
@@ -79,7 +79,7 @@ public class BetterConfigClient implements ConfigurationProvider {
                     ? this.getConfigurationAsync(classOfT, defaultValue).get(this.maxWaitTimeForSyncCallsInSeconds, TimeUnit.SECONDS)
                     : this.getConfigurationAsync(classOfT, defaultValue).get();
         } catch (Exception e) {
-            logger.error("An error occurred during deserialization.", e);
+            LOGGER.error("An error occurred during deserialization.", e);
             return this.getDefaultValue(classOfT, defaultValue);
         }
     }
@@ -105,7 +105,7 @@ public class BetterConfigClient implements ConfigurationProvider {
                     ? this.getValueAsync(classOfT, key, defaultValue).get(this.maxWaitTimeForSyncCallsInSeconds, TimeUnit.SECONDS)
                     : this.getValueAsync(classOfT, key, defaultValue).get();
         } catch (Exception e) {
-            logger.error("An error occurred during the reading of the value for key '"+key+"'.", e);
+            LOGGER.error("An error occurred during the reading of the value for key '"+key+"'.", e);
             return this.getDefaultJsonValue(classOfT, key, defaultValue);
         }
     }
@@ -130,7 +130,7 @@ public class BetterConfigClient implements ConfigurationProvider {
             else
                 this.forceRefreshAsync().get();
         } catch (Exception e) {
-            logger.error("An error occurred during the refresh.", e);
+            LOGGER.error("An error occurred during the refresh.", e);
         }
     }
 
@@ -148,7 +148,7 @@ public class BetterConfigClient implements ConfigurationProvider {
         try {
             return parser.parseValue(classOfT, config, key);
         } catch (Exception e) {
-            logger.error("An error occurred during the deserialization of the value for key '"+key+"'.", e);
+            LOGGER.error("An error occurred during the deserialization of the value for key '"+key+"'.", e);
             return defaultValue;
         }
     }

@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
  * This class is used by the internal {@link ConfigCache} implementation to fetch the latest configuration.
  */
 public class ConfigFetcher implements Closeable {
-    private static final Logger logger = LoggerFactory.getLogger(ConfigFetcher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigFetcher.class);
     private final OkHttpClient httpClient;
     private String url;
     private String eTag;
@@ -26,11 +26,11 @@ public class ConfigFetcher implements Closeable {
      * Constructs a new instance.
      *
      * @param httpClient the http client.
-     * @param projectToken the project token.
+     * @param projectSecret the project secret.
      */
-    public ConfigFetcher(OkHttpClient httpClient, String projectToken) {
+    public ConfigFetcher(OkHttpClient httpClient, String projectSecret) {
         this.httpClient = httpClient;
-        this.url = "https://cdn.betterconfig.com/configuration-files/" + projectToken + "/config.json";
+        this.url = "https://cdn.betterconfig.com/configuration-files/" + projectSecret + "/config.json";
         this.version = this.getClass().getPackage().getImplementationVersion();
     }
 
@@ -46,27 +46,27 @@ public class ConfigFetcher implements Closeable {
         this.httpClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                logger.error("An error occurred during fetching the latest configuration.", e);
-                future.complete(new FetchResponse(FetchResponse.Status.Failed, null));
+                LOGGER.error("An error occurred during fetching the latest configuration.", e);
+                future.complete(new FetchResponse(FetchResponse.Status.FAILED, null));
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(Call call, Response response) {
                 try {
                     if (response.isSuccessful()) {
-                        logger.debug("Fetch was successful: new config fetched");
+                        LOGGER.debug("Fetch was successful: new config fetched");
                         eTag = response.header("ETag");
-                        future.complete(new FetchResponse(FetchResponse.Status.Fetched, response.body().string()));
+                        future.complete(new FetchResponse(FetchResponse.Status.FETCHED, response.body().string()));
                     } else if (response.code() == 304) {
-                        logger.debug("Fetch was successful: config not modified");
-                        future.complete(new FetchResponse(FetchResponse.Status.NotModified, null));
+                        LOGGER.debug("Fetch was successful: config not modified");
+                        future.complete(new FetchResponse(FetchResponse.Status.NOTMODIFIED, null));
                     } else {
-                        logger.debug("Non success status code:" + response.code());
-                        future.complete(new FetchResponse(FetchResponse.Status.Failed, null));
+                        LOGGER.debug("Non success status code:" + response.code());
+                        future.complete(new FetchResponse(FetchResponse.Status.FAILED, null));
                     }
                 } catch (Exception e) {
-                    logger.error("An error occurred during fetching the latest configuration.", e);
-                    future.complete(new FetchResponse(FetchResponse.Status.Failed, null));
+                    LOGGER.error("An error occurred during fetching the latest configuration.", e);
+                    future.complete(new FetchResponse(FetchResponse.Status.FAILED, null));
                 }
             }
         });

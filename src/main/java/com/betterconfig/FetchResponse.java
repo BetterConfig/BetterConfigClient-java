@@ -5,12 +5,12 @@ package com.betterconfig;
  */
 public class FetchResponse {
     /**
-     * The response status, can be {@code Fetched}, {@code NotModified} or {@code Failed}.
+     * The response status, can be {@code FETCHED}, {@code NOTMODIFIED} or {@code FAILED}.
      */
     public enum Status {
-        Fetched,
-        NotModified,
-        Failed
+        FETCHED,
+        NOTMODIFIED,
+        FAILED
     }
 
     private Status status;
@@ -22,7 +22,7 @@ public class FetchResponse {
      * @return true if a new configuration value was fetched, otherwise false.
      */
     public boolean isFetched() {
-        return this.status == Status.Fetched;
+        return this.status == Status.FETCHED;
     }
 
     /**
@@ -31,7 +31,7 @@ public class FetchResponse {
      * @return true if the fetch resulted a '304 Not Modified' code, otherwise false.
      */
     public boolean isNotModified() {
-        return this.status == Status.NotModified;
+        return this.status == Status.NOTMODIFIED;
     }
 
     /**
@@ -40,12 +40,12 @@ public class FetchResponse {
      * @return true if the fetch is failed, otherwise false.
      */
     public boolean isFailed() {
-        return this.status == Status.Failed;
+        return this.status == Status.FAILED;
     }
 
     /**
      * Gets the fetched configuration value, should be used when the response
-     * has a {@code FetchResponse.Status.Fetched} status code.
+     * has a {@code FetchResponse.Status.FETCHED} status code.
      *
      * @return the fetched config.
      */
