@@ -30,7 +30,7 @@ public class BetterConfigClientIntegrationTest {
                 .refreshPolicy((configFetcher, cache) -> {
                     configFetcher.setUrl(this.server.url("/").toString());
                     return ExpiringCachePolicy.newBuilder()
-                            .cacheRefreshRateInSeconds(2)
+                            .cacheRefreshIntervalInSeconds(2)
                             .asyncRefresh(true)
                             .build(configFetcher, cache);
                 })

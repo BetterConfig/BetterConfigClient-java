@@ -85,7 +85,7 @@ public class BetterConfigClientTest {
                 .cache(new FailingCache())
                 .refreshPolicy((f, c) -> {
                     f.setUrl(server.url("/").toString());
-                    return new AlwaysFetchingPolicy(f,c);
+                    return new ManualPollingPolicy(f,c);
                 })
                 .build(SECRET);
 
@@ -106,7 +106,7 @@ public class BetterConfigClientTest {
         BetterConfigClient cl = BetterConfigClient.newBuilder()
                 .refreshPolicy((f, c) -> {
                     f.setUrl(server.url("/").toString());
-                    return new AlwaysFetchingPolicy(f,c);
+                    return new ManualPollingPolicy(f,c);
                 })
                 .maxWaitTimeForSyncCallsInSeconds(2)
                 .build(SECRET);
@@ -130,7 +130,7 @@ public class BetterConfigClientTest {
         BetterConfigClient cl = BetterConfigClient.newBuilder()
                 .refreshPolicy((f, c) -> {
                     f.setUrl(server.url("/").toString());
-                    return new AlwaysFetchingPolicy(f,c);
+                    return new ManualPollingPolicy(f,c);
                 })
                 .maxWaitTimeForSyncCallsInSeconds(2)
                 .build(SECRET);
@@ -156,7 +156,7 @@ public class BetterConfigClientTest {
         BetterConfigClient cl = BetterConfigClient.newBuilder()
                 .refreshPolicy((f, c) -> {
                     f.setUrl(server.url("/").toString());
-                    return new AlwaysFetchingPolicy(f,c);
+                    return new ManualPollingPolicy(f,c);
                 })
                 .maxWaitTimeForSyncCallsInSeconds(2)
                 .build(SECRET);
@@ -182,7 +182,7 @@ public class BetterConfigClientTest {
         BetterConfigClient cl = BetterConfigClient.newBuilder()
                 .refreshPolicy((f, c) -> {
                     f.setUrl(server.url("/").toString());
-                    return new AlwaysFetchingPolicy(f,c);
+                    return new ManualPollingPolicy(f,c);
                 })
                 .maxWaitTimeForSyncCallsInSeconds(2)
                 .build(SECRET);
