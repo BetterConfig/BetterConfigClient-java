@@ -56,7 +56,7 @@ public class AutoPollingPolicy extends RefreshPolicy {
             } catch (Exception e){
                 LOGGER.error("An error occurred during the scheduler poll execution", e);
             }
-        }, 0, builder.autoPollRateInSeconds, TimeUnit.SECONDS);
+        }, 0, builder.autoPollIntervalInSeconds, TimeUnit.SECONDS);
     }
 
     @Override
@@ -110,21 +110,21 @@ public class AutoPollingPolicy extends RefreshPolicy {
      * A builder that helps construct a {@link AutoPollingPolicy} instance.
      */
     public static class Builder {
-        private int autoPollRateInSeconds = 60;
+        private int autoPollIntervalInSeconds = 60;
         private ConfigurationChangeListener listener;
 
         /**
          * Sets at least how often this policy should fetch the latest configuration and refresh the cache.
          *
-         * @param autoPollRateInSeconds the poll rate.
+         * @param autoPollIntervalInSeconds the poll interval in seconds.
          * @return the builder.
          * @throws IllegalArgumentException when the given value is less than 2 seconds.
          */
-        public Builder autoPollRateInSeconds(int autoPollRateInSeconds) {
-            if(autoPollRateInSeconds < 2)
+        public Builder autoPollIntervalInSeconds(int autoPollIntervalInSeconds) {
+            if(autoPollIntervalInSeconds < 2)
                 throw new IllegalArgumentException("autoPollRateInSeconds cannot be less than 2 seconds");
 
-            this.autoPollRateInSeconds = autoPollRateInSeconds;
+            this.autoPollIntervalInSeconds = autoPollIntervalInSeconds;
             return this;
         }
 

@@ -26,7 +26,7 @@ public class ExpiringCachePolicyAsyncTest {
         ConfigCache cache = new InMemoryConfigCache();
         fetcher.setUrl(this.server.url("/").toString());
         this.policy = ExpiringCachePolicy.newBuilder()
-                .cacheRefreshRateInSeconds(5)
+                .cacheRefreshIntervalInSeconds(5)
                 .asyncRefresh(true)
                 .build(fetcher,cache);
     }
@@ -64,7 +64,7 @@ public class ExpiringCachePolicyAsyncTest {
         ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
         fetcher.setUrl(this.server.url("/").toString());
         ExpiringCachePolicy lPolicy = ExpiringCachePolicy.newBuilder()
-                .cacheRefreshRateInSeconds(5)
+                .cacheRefreshIntervalInSeconds(5)
                 .asyncRefresh(true)
                 .build(fetcher, new FailingCache());
 

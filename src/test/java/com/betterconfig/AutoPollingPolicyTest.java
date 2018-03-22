@@ -31,7 +31,7 @@ public class AutoPollingPolicyTest {
                 .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.FETCHED, result)));
 
         AutoPollingPolicy policy = AutoPollingPolicy.newBuilder()
-                .autoPollRateInSeconds(2)
+                .autoPollIntervalInSeconds(2)
                 .build(fetcher,cache);
 
         assertEquals(result, policy.getConfigurationJsonAsync().get());
@@ -50,7 +50,7 @@ public class AutoPollingPolicyTest {
                 .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.FETCHED, result)));
 
         AutoPollingPolicy policy = AutoPollingPolicy.newBuilder()
-                .autoPollRateInSeconds(2)
+                .autoPollIntervalInSeconds(2)
                 .build(fetcher,cache);
 
         assertEquals("test", policy.getConfigurationJsonAsync().get());
@@ -70,7 +70,7 @@ public class AutoPollingPolicyTest {
         AtomicReference<String> newConfig  = new AtomicReference<>();
 
         AutoPollingPolicy policy = AutoPollingPolicy.newBuilder()
-                .autoPollRateInSeconds(2)
+                .autoPollIntervalInSeconds(2)
                 .configurationChangeListener((parser, newConfiguration) -> newConfig.set(newConfiguration))
                 .build(fetcher, cache);
 
