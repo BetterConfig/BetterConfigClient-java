@@ -10,14 +10,14 @@ import java.io.IOException;
  * A cache API used to make custom cache implementations for {@link BetterConfigClient}.
  */
 public abstract class ConfigCache {
-    private static final Logger logger = LoggerFactory.getLogger(ConfigFetcher.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(ConfigCache.class);
     private String inMemoryValue;
 
     public String get() {
         try {
             return this.read();
         } catch (Exception e) {
-            logger.error("An error occurred during the cache read", e);
+            LOGGER.error("An error occurred during the cache read", e);
             return this.inMemoryValue;
         }
     }
@@ -27,7 +27,7 @@ public abstract class ConfigCache {
             this.inMemoryValue = value;
             this.write(value);
         } catch (Exception e) {
-            logger.error("An error occurred during the cache write", e);
+            LOGGER.error("An error occurred during the cache write", e);
         }
     }
 

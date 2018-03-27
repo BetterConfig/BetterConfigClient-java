@@ -46,7 +46,9 @@ Or use the async APIs:
 ```java
 client.getValueAsync(Boolean.class, "key-of-my-awesome-feature", false)
     .thenAccept(isMyAwesomeFeatureEnabled -> {
-         //show your awesome feature to the world!
+        if(isMyAwesomeFeatureEnabled) {
+            //show your awesome feature to the world!
+        }
     });
 ```
 
@@ -87,13 +89,13 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
 The internal caching control and the communication between the client and BetterConfig are managed through a refresh policy. There are 3 predefined implementations built in the library.
 #### 1. Auto polling policy (default)
 This policy fetches the latest configuration and updates the cache repeatedly. 
-##### Poll rate 
+##### Poll interval 
 You have the option to configure the polling interval through its builder (it has to be greater than 2 seconds, the default is 60):
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
                 .refreshPolicy((configFetcher, cache) -> 
                     AutoPollingPolicy.newBuilder()
-                        .autoPollRateInSeconds(120) // set the polling interval
+                        .autoPollIntervalInSeconds(120) // set the polling interval
                         .build(configFetcher, cache)
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
@@ -128,7 +130,7 @@ after the initial cached value is set this value will be used to determine how m
 BetterConfigClient client = BetterConfigClient.newBuilder()
                 .refreshPolicy((configFetcher, cache) -> 
                     ExpiringCachePolicy.newBuilder()
-                        .cacheRefreshRateInSeconds(120) // the cache will expire in 120 seconds
+                        .cacheRefreshIntervalInSeconds(120) // the cache will expire in 120 seconds
                         .build(configFetcher, cache)
                 .build("<PLACE-YOUR-PROJECT-SECRET-HERE>");
 ```
@@ -147,11 +149,11 @@ BetterConfigClient client = BetterConfigClient.newBuilder()
 If you set the `.asyncRefresh()` to be `false`, the refresh operation will be awaited
 until the fetching of the new configuration is completed.
 
-#### 3. Always fetching policy
+#### 3. Manual polling policy
 With this policy every new configuration request on the BetterConfigClient will trigger a new fetch over HTTP.
 ```java
 BetterConfigClient client = BetterConfigClient.newBuilder()
-                .refreshPolicy((configFetcher, cache) -> new AlwaysFetchingPolicy(configFetcher,cache));
+                .refreshPolicy((configFetcher, cache) -> new ManualPollingPolicy(configFetcher,cache));
 ```
 
 #### Custom Policy

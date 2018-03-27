@@ -6,8 +6,11 @@ import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A json parser which can be used to deserialize configuration json strings.
+ */
 public class ConfigurationParser {
-    private static final Logger logger = LoggerFactory.getLogger(ConfigurationParser.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationParser.class);
     private final Gson gson = new Gson();
     private final JsonParser parser = new JsonParser();
 
@@ -28,7 +31,7 @@ public class ConfigurationParser {
         try {
             return gson.fromJson(config, classOfT);
         } catch (Exception e) {
-            logger.error("Parsing of the json ("+ config +") failed", e);
+            LOGGER.error("Parsing of the json ("+ config +") failed", e);
             throw new ParsingFailedException("Parsing failed.", config);
         }
     }
@@ -64,7 +67,7 @@ public class ConfigurationParser {
             else
                 return classOfT.cast(element.getAsBoolean());
         } catch (Exception e) {
-            logger.error("Parsing of the json ("+ config +") failed", e);
+            LOGGER.error("Parsing of the json ("+ config +") failed", e);
             throw new ParsingFailedException("Parsing failed.", config);
         }
     }

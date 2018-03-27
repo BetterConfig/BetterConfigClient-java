@@ -4,6 +4,10 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * The public interface of a refresh policy which's implementors
+ * should describe the configuration update rules.
+ */
 public abstract class RefreshPolicy implements Closeable {
     private final ConfigCache cache;
     private final ConfigFetcher configFetcher;

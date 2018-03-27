@@ -27,7 +27,7 @@ public class AutoPollingPolicyIntegrationTest {
         ConfigCache cache = new InMemoryConfigCache();
         fetcher.setUrl(this.server.url("/").toString());
         this.policy = AutoPollingPolicy.newBuilder()
-                .autoPollRateInSeconds(2)
+                .autoPollIntervalInSeconds(2)
                 .build(fetcher,cache);
     }
 
@@ -40,7 +40,7 @@ public class AutoPollingPolicyIntegrationTest {
     @Test
     public void ensuresPollingIntervalGreaterThanTwoSeconds() {
         assertThrows(IllegalArgumentException.class, ()-> AutoPollingPolicy.newBuilder()
-                .autoPollRateInSeconds(1)
+                .autoPollIntervalInSeconds(1)
                 .build(new ConfigFetcher(new OkHttpClient.Builder().build(), ""), new InMemoryConfigCache()));
     }
 

@@ -4,9 +4,13 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Describes a {@link RefreshPolicy} which uses an expiring cache
+ * to maintain the internally stored configuration.
+ */
 public class ExpiringCachePolicy extends RefreshPolicy {
     private Instant lastRefreshedTime;
-    private int cacheRefreshRateInSeconds;
+    private int cacheRefreshIntervalInSeconds;
     private boolean asyncRefresh;
     private final AtomicBoolean isFetching;
     private final AtomicBoolean initialized;
@@ -16,13 +20,13 @@ public class ExpiringCachePolicy extends RefreshPolicy {
      * Constructor used by the child classes.
      *
      * @param configFetcher the internal config fetcher instance.
-     * @param cache         the internal cache instance.
+     * @param cache the internal cache instance.
      */
     private ExpiringCachePolicy(ConfigFetcher configFetcher, ConfigCache cache, Builder builder) {
         super(configFetcher, cache);
 
         this.asyncRefresh = builder.asyncRefresh;
-        this.cacheRefreshRateInSeconds = builder.cacheRefreshRateInSeconds;
+        this.cacheRefreshIntervalInSeconds = builder.cacheRefreshIntervalInSeconds;
         this.isFetching = new AtomicBoolean(false);
         this.initialized = new AtomicBoolean(false);
         this.lastRefreshedTime = Instant.MIN;
@@ -30,7 +34,7 @@ public class ExpiringCachePolicy extends RefreshPolicy {
 
     @Override
     public CompletableFuture<String> getConfigurationJsonAsync() {
-        if(Instant.now().isAfter(lastRefreshedTime.plusSeconds(this.cacheRefreshRateInSeconds))) {
+        if(Instant.now().isAfter(lastRefreshedTime.plusSeconds(this.cacheRefreshIntervalInSeconds))) {
             if(!this.isFetching.compareAndSet(false, true))
                 return this.asyncRefresh && this.initialized.get()
                         ? CompletableFuture.completedFuture(super.cache().get())
@@ -73,18 +77,18 @@ public class ExpiringCachePolicy extends RefreshPolicy {
      * A builder that helps construct a {@link ExpiringCachePolicy} instance.
      */
     public static class Builder {
-        private int cacheRefreshRateInSeconds = 60;
+        private int cacheRefreshIntervalInSeconds = 60;
         private boolean asyncRefresh;
 
         /**
          * Sets how long the cache will store its value before fetching the
          * latest from the network again.
          *
-         * @param cacheRefreshRateInSeconds the refresh rate value in seconds.
+         * @param cacheRefreshIntervalInSeconds the refresh interval value in seconds.
          * @return the builder.
          */
-        public Builder cacheRefreshRateInSeconds(int cacheRefreshRateInSeconds) {
-            this.cacheRefreshRateInSeconds = cacheRefreshRateInSeconds;
+        public Builder cacheRefreshIntervalInSeconds(int cacheRefreshIntervalInSeconds) {
+            this.cacheRefreshIntervalInSeconds = cacheRefreshIntervalInSeconds;
             return this;
         }
 

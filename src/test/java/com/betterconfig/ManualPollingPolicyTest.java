@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class AlwaysFetchingPolicyTest {
+public class ManualPollingPolicyTest {
     private RefreshPolicy policy;
     private MockWebServer server;
 
@@ -27,7 +27,7 @@ public class AlwaysFetchingPolicyTest {
         ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
         ConfigCache cache = new InMemoryConfigCache();
         fetcher.setUrl(this.server.url("/").toString());
-        this.policy = new AlwaysFetchingPolicy(fetcher,cache);
+        this.policy = new ManualPollingPolicy(fetcher,cache);
     }
 
     @AfterEach
@@ -52,7 +52,7 @@ public class AlwaysFetchingPolicyTest {
     public void getCacheFails() throws InterruptedException, ExecutionException {
         ConfigFetcher fetcher = new ConfigFetcher(new OkHttpClient.Builder().build(), "");
         fetcher.setUrl(this.server.url("/").toString());
-        AlwaysFetchingPolicy lPolicy = new AlwaysFetchingPolicy(fetcher, new FailingCache());
+        ManualPollingPolicy lPolicy = new ManualPollingPolicy(fetcher, new FailingCache());
 
         this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test"));
         this.server.enqueue(new MockResponse().setResponseCode(200).setBody("test2").setBodyDelay(3, TimeUnit.SECONDS));
@@ -86,9 +86,9 @@ public class AlwaysFetchingPolicyTest {
         when(cache.get()).thenReturn(result);
 
         when(fetcher.getConfigurationJsonStringAsync())
-                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.Fetched, result)));
+                .thenReturn(CompletableFuture.completedFuture(new FetchResponse(FetchResponse.Status.FETCHED, result)));
 
-        AlwaysFetchingPolicy policy = new AlwaysFetchingPolicy(fetcher, cache);
+        ManualPollingPolicy policy = new ManualPollingPolicy(fetcher, cache);
 
         assertEquals("test", policy.getConfigurationJsonAsync().get());
 
