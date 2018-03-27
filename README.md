@@ -16,12 +16,12 @@ and other programs, so you can configure them through [this](https://betterconfi
 <dependency>
     <groupId>com.betterconfig</groupId>
     <artifactId>betterconfig-client</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 *Gradle:*
 ```groovy
-compile 'com.betterconfig:betterconfig-client:1.1.0'
+compile 'com.betterconfig:betterconfig-client:1.1.1'
 ```
 **2. Get your Project Secret from [BetterConfig.com](https://betterconfig.com) portal**
 ![YourConnectionUrl](https://raw.githubusercontent.com/BetterConfig/BetterConfigClient-dotnet/master/media/readme01.png  "YourProjectToken")
